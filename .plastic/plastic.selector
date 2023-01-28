@@ -1,0 +1,4 @@
+repository "NovelCraft-Client@zhangyr2023@cloud.cn"
+  path "/"
+    br "/main"
+    co "/main"
