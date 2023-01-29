@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
+using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 
 /// <summary>
@@ -43,17 +46,17 @@ public class Upload
     /// <returns>
     /// OpenFileName: The file to be opened
     /// </returns>
-    public OpenFileName UploadJson()
+    public OpenFileName UploadDat()
     {
         OpenFileName openFileName = new OpenFileName();
         openFileName.StructSize = Marshal.SizeOf(openFileName);
-        openFileName.Filter = "JSON文件(*.json)\0*.json";
+        openFileName.Filter = "DAT文件(*.dat)\0*.dat";
         openFileName.File = new string(new char[256]);
         openFileName.MaxFile = openFileName.File.Length;
         openFileName.FileTitle = new string(new char[64]);
         openFileName.MaxFileTitle = openFileName.FileTitle.Length;
         openFileName.InitialDir = Application.streamingAssetsPath.Replace('/', '\\');//默认路径
-        openFileName.Title = "选择回放json文件";
+        openFileName.Title = "选择回放dat文件";
         openFileName.Flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000008;
 
         if (LocalDialog.GetOpenFileName(openFileName))
