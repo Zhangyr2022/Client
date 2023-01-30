@@ -22,7 +22,7 @@ public class JsonUtility
         // Read the level data to a JSON string.
         Stream levelDataEntryStream = levelDataEntry.Open();
         StreamReader levelDataEntryStreamReader = new StreamReader(levelDataEntryStream);
-        Debug.Log(levelDataEntryStreamReader.ReadToEnd());
+        //Debug.Log(levelDataEntryStreamReader.ReadToEnd());
         return new JsonTextReader(levelDataEntryStreamReader);
     }
     /// <summary>

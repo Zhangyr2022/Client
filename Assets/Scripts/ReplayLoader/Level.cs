@@ -16,17 +16,14 @@ public class Level : MonoBehaviour
     {
         public const int SectionLength = 16;
         public const int BlockNumInSections = SectionLength * SectionLength * SectionLength;
-        public const int XSectionNum = 16;
-        public const int YSectionNum = 24;
-        public const int ZSectionNum = 16;
         /// <summary>
-        /// "Sections" contains all the sections (3D array)
+        /// "Sections" contains all the sections (Dictionary)
         /// The length of Section.Blocks array must be equal to 'BlockNumInSections'
         /// </summary>
-        public Section[,,] Sections;
-        public LevelInfo(Section[,,] sections)
+        public BlockSource AllBlockSource;
+        public LevelInfo(BlockSource blockSource)
         {
-            this.Sections = sections;
+            this.AllBlockSource = blockSource;
         }
     }
     private BlockCreator _blockCreator;
@@ -45,9 +42,9 @@ public class Level : MonoBehaviour
     private void Start()
     {
         // Initialize the Sections
-        this._levelInfo = new LevelInfo(new Section[LevelInfo.XSectionNum, LevelInfo.YSectionNum, LevelInfo.ZSectionNum]);
+        this._levelInfo = new LevelInfo(new BlockSource());
         // Initialize the BlockCreator
-        _blockCreator = GameObject.Find("BlockCreator").GetComponent<BlockCreator>();
+        this._blockCreator = GameObject.Find("BlockCreator").GetComponent<BlockCreator>();
         // Initialize the Dict and BlockNameArray
         this.BlockDict = JsonUtility.ParseBlockDictJson("Json/Dict");
         this.BlockNameArray = DictUtility.BlockDictParser(this.BlockDict);
@@ -79,18 +76,17 @@ public class Level : MonoBehaviour
         JObject jsonObject = (JObject)JToken.ReadFrom(reader);
         // Deal with Sections: array
         JArray sections = (JArray)jsonObject["sections"];
-
-        Debug.Log(sections.ToString());
+        Debug.Log(sections.Count);
 
         for (int i = 0; i < sections.Count; i++)
         {
-            // Compute the absolute position of now section / 16
-            int sectionX = i / (LevelInfo.ZSectionNum * LevelInfo.YSectionNum);
-            int sectionZ = i % LevelInfo.ZSectionNum;
-            int sectionY = i % LevelInfo.YSectionNum - sectionZ;
+            // Get the absolute position of now section
+            int sectionX = int.Parse(sections[i]["x"].ToString());
+            int sectionY = int.Parse(sections[i]["y"].ToString());
+            int sectionZ = int.Parse(sections[i]["z"].ToString());
 
             // All blocks in one section
-            Section section = new(new Vector3Int(sectionX, sectionY, sectionZ));
+            Section section = new(new Vector3Int(sectionX, sectionY, sectionZ) / LevelInfo.SectionLength);
 
             // jsonSection: array<int blockID>
             JArray jsonSection = (JArray)(sections[i]["blocks"]);
@@ -102,33 +98,48 @@ public class Level : MonoBehaviour
             for (int j = 0; j < jsonSection.Count; j++)
             {
                 // Compute relative position <The blocks in the section which can be accessed by `blocks[x*256+y*16+z]>
-                int x = j / 256, y = j / 16 - x * 16, z = j % 16;
+                int x = j / 256;
+                int y = j / 16 - x * 16;
+                int z = j % 16;
+                // Initialize the block
+                section.Blocks[x, y, z] = new Block();
                 // BlockID
-                section.Blocks[x, y, z].Id = int.Parse(jsonSection[j].ToString());
+                section.Blocks[x, y, z].Id = short.Parse(jsonSection[j].ToString());
                 // Add name according to _blockNameArray
-                section.Blocks[x, y, z].Name = BlockNameArray[section.Blocks[x, y, z].Id];
+                try
+                {
+                    section.Blocks[x, y, z].Name = BlockNameArray[section.Blocks[x, y, z].Id];
+                }
+                catch
+                {
+                    Debug.Log(BlockNameArray);
+                    Debug.Log(section.Blocks[x, y, z].Id);
+                    section.Blocks[x, y, z].Name = BlockNameArray[0];
+                    section.Blocks[x, y, z].Id = 0;
+                }
                 // Compute absolute position
                 section.Blocks[x, y, z].Position = new Vector3Int(sectionX + x, sectionY + y, sectionZ + z);
             }
-            this._levelInfo.Sections[sectionX, sectionY, sectionZ] = section;
+            //try
+            //{
+            this._levelInfo.AllBlockSource.AddSection(section);
+            //}
+            //catch
+            //{
+            //    Debug.Log(i);
+            //    Debug.Log(new Vector3Int(sectionX, sectionY, sectionZ));
+            //}
+
         }
+        //Debug.Log($"Section num: {this._levelInfo.AllBlockSource.SectionDict.Count}");
+
     }
     public void CheckVisibility()
     {
         this.CheckInnerVisibility();
         this.CheckNeighbourVisibility();
     }
-    /// <summary>
-    /// Get the section index by using x,y,z index
-    /// </summary>
-    /// <param name="xIndex"> The x index of section </param>
-    /// <param name="yIndex"> The y index of section </param>
-    /// <param name="zIndex"> The z index of section </param>
-    /// <returns></returns>
-    private int GetSectionIndex(int xIndex, int yIndex, int zIndex)
-    {
-        return xIndex * LevelInfo.YSectionNum * LevelInfo.ZSectionNum + yIndex * LevelInfo.ZSectionNum + zIndex;
-    }
+
     /// <summary>
     /// Check the visibility in all the sections
     /// </summary>
@@ -136,40 +147,35 @@ public class Level : MonoBehaviour
     private void CheckInnerVisibility()
     {
         int airId = this.BlockDict["Air"];
-        // sx: section x / 16 , sy: section y / 16 , sz: section z / 16
-        for (int sx = 0; sx < this._levelInfo.Sections.GetLength(0); sx++)
+        foreach (var blockSourceItem in this._levelInfo.AllBlockSource.SectionDict)
         {
-            for (int sy = 0; sy < this._levelInfo.Sections.GetLength(1); sy++)
-            {
-                for (int sz = 0; sz < this._levelInfo.Sections.GetLength(2); sz++)
-                {
-                    // Check visibility in the section
-                    Section nowSection = this._levelInfo.Sections[sx, sy, sz];
-                    // bx: block x , by: block y , bz: block z (relative position to nowSection)
-                    // Regardless of the edge which will be computed in function "CheckNeighbourVisibility"
-                    for (int bx = 1; bx < nowSection.Blocks.GetLength(0) - 1; bx++)
-                    {
-                        for (int by = 1; by < nowSection.Blocks.GetLength(1) - 1; by++)
-                        {
-                            for (int bz = 1; bz < nowSection.Blocks.GetLength(2) - 1; bz++)
-                            {
-                                // If the block is visible, create it at once
-                                Block nowBlock = nowSection.Blocks[bx, by, bz];
+            // Check visibility in the section
+            Section nowSection = blockSourceItem.Value;
 
-                                if (nowSection.Blocks[bx - 1, by, bz].Id == airId ||
-                                    nowSection.Blocks[bx + 1, by, bz].Id == airId ||
-                                    nowSection.Blocks[bx, by - 1, bz].Id == airId ||
-                                    nowSection.Blocks[bx, by + 1, bz].Id == airId ||
-                                    nowSection.Blocks[bx, by, bz - 1].Id == airId ||
-                                    nowSection.Blocks[bx, by, bz + 1].Id == airId)
-                                {
-                                    this._blockCreator.CreateBlock(nowBlock);
-                                }
-                            }
+            // bx: block x , by: block y , bz: block z (relative position to nowSection)
+            // Regardless of the edge which will be computed in function "CheckNeighbourVisibility"
+            for (int bx = 1; bx < nowSection.Blocks.GetLength(0) - 1; bx++)
+            {
+                for (int by = 1; by < nowSection.Blocks.GetLength(1) - 1; by++)
+                {
+                    for (int bz = 1; bz < nowSection.Blocks.GetLength(2) - 1; bz++)
+                    {
+                        // If the block is visible, create it at once
+                        Block nowBlock = nowSection.Blocks[bx, by, bz];
+
+                        if (nowSection.Blocks[bx - 1, by, bz].Id == airId ||
+                            nowSection.Blocks[bx + 1, by, bz].Id == airId ||
+                            nowSection.Blocks[bx, by - 1, bz].Id == airId ||
+                            nowSection.Blocks[bx, by + 1, bz].Id == airId ||
+                            nowSection.Blocks[bx, by, bz - 1].Id == airId ||
+                            nowSection.Blocks[bx, by, bz + 1].Id == airId)
+                        {
+                            this._blockCreator.CreateBlock(nowBlock);
                         }
                     }
                 }
             }
+
         }
     }
     /// <summary>
@@ -178,15 +184,182 @@ public class Level : MonoBehaviour
     /// <returns></returns>
     private void CheckNeighbourVisibility()
     {
-        for (int i = 0; i < this._levelInfo.Sections.GetLength(0); i++)
+        int airId = this.BlockDict["Air"];
+
+        int sectionSmallEdge = 0, sectionLargeEdge = LevelInfo.SectionLength - 1;
+        foreach (var blockSourceItem in this._levelInfo.AllBlockSource.SectionDict)
         {
-            for (int j = 0; j < this._levelInfo.Sections.GetLength(1); j++)
+            // Check visibility on the surface of each section
+            Section nowSection = blockSourceItem.Value;
+            Vector3Int nowSectionPosition = blockSourceItem.Key * LevelInfo.SectionLength;
+
+            // bx: block x , by: block y , bz: block z (relative position to nowSection)
+
+            // X small edge in the section
+            for (int by = 0; by <= sectionLargeEdge; by++)
             {
-                for (int k = 0; k < this._levelInfo.Sections.GetLength(2); k++)
+                for (int bz = 0; bz <= sectionLargeEdge; bz++)
                 {
-                    // Check visibility between the section
+                    Vector3Int absolutePosition = new Vector3Int(
+                        nowSectionPosition.x - 1,
+                        nowSectionPosition.y + by,
+                        nowSectionPosition.z + bz);
+
+                    Block xLastSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the X Last Section 
+                    if (nowSection.Blocks[sectionSmallEdge + 1, by, bz].Id == airId ||  // Xnext is air
+
+                        (xLastSectionBlock != null && xLastSectionBlock.Id == airId) || // Block in the X Last Section is air
+
+                        (by > 0 && nowSection.Blocks[sectionSmallEdge, by - 1, bz].Id == airId) ||
+                        (by < sectionLargeEdge && nowSection.Blocks[sectionSmallEdge, by + 1, bz].Id == airId) ||
+                        (bz > 0 && nowSection.Blocks[sectionSmallEdge, by, bz - 1].Id == airId) ||
+                        (bz < sectionLargeEdge && nowSection.Blocks[sectionSmallEdge, by, bz + 1].Id == airId))
+                    {
+                        // If the block is visible, create it at once
+                        Block nowBlock = nowSection.Blocks[sectionSmallEdge, by, bz];
+
+                        this._blockCreator.CreateBlock(nowBlock);
+                    }
+                }
+            }
+            // X large edge in the section
+            for (int by = 0; by <= sectionLargeEdge; by++)
+            {
+                for (int bz = 0; bz <= sectionLargeEdge; bz++)
+                {
+                    Vector3Int absolutePosition = new Vector3Int(
+                        nowSectionPosition.x + LevelInfo.SectionLength,
+                        nowSectionPosition.y + by,
+                        nowSectionPosition.z + bz);
+
+                    Block xNextSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the X Next Section 
+                    if (nowSection.Blocks[sectionLargeEdge - 1, by, bz].Id == airId ||  // Xlast is air
+
+                        (xNextSectionBlock != null && xNextSectionBlock.Id == airId) || // block in the X Next Section is air
+
+                        (by > 0 && nowSection.Blocks[sectionLargeEdge, by - 1, bz].Id == airId) ||
+                        (by < sectionLargeEdge && nowSection.Blocks[sectionLargeEdge, by + 1, bz].Id == airId) ||
+                        (bz > 0 && nowSection.Blocks[sectionLargeEdge, by, bz - 1].Id == airId) ||
+                        (bz < sectionLargeEdge && nowSection.Blocks[sectionLargeEdge, by, bz + 1].Id == airId))
+                    {
+                        // If the block is visible, create it at once
+                        Block nowBlock = nowSection.Blocks[sectionLargeEdge, by, bz];
+
+                        this._blockCreator.CreateBlock(nowBlock);
+                    }
+                }
+            }
+            //------------------------------------------------//
+            // Y small edge in the section
+            for (int bx = 0; bx <= sectionLargeEdge; bx++)
+            {
+                for (int bz = 0; bz <= sectionLargeEdge; bz++)
+                {
+                    Vector3Int absolutePosition = new Vector3Int(
+                        nowSectionPosition.x + bx,
+                        nowSectionPosition.y - 1,
+                        nowSectionPosition.z + bz);
+
+                    Block yLastSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the Y last Section 
+                    if (nowSection.Blocks[bx, sectionSmallEdge + 1, bz].Id == airId ||  // Ynext is air
+
+                        (yLastSectionBlock != null && yLastSectionBlock.Id == airId) || // block in the Y Last Section is air
+
+                        (bx > 0 && nowSection.Blocks[bx - 1, sectionSmallEdge, bz].Id == airId) ||
+                        (bx < sectionLargeEdge && nowSection.Blocks[bx + 1, sectionSmallEdge, bz].Id == airId) ||
+                        (bz > 0 && nowSection.Blocks[bx, sectionSmallEdge, bz - 1].Id == airId) ||
+                        (bz < sectionLargeEdge && nowSection.Blocks[bx, sectionSmallEdge, bz + 1].Id == airId))
+                    {
+                        // If the block is visible, create it at once
+                        Block nowBlock = nowSection.Blocks[bx, sectionSmallEdge, bz];
+
+                        this._blockCreator.CreateBlock(nowBlock);
+                    }
+                }
+            }
+            // Y large edge in the section
+            for (int bx = 0; bx <= sectionLargeEdge; bx++)
+            {
+                for (int bz = 0; bz <= sectionLargeEdge; bz++)
+                {
+                    Vector3Int absolutePosition = new Vector3Int(
+                        nowSectionPosition.x + bx,
+                        nowSectionPosition.y + LevelInfo.SectionLength,
+                        nowSectionPosition.z + bz);
+
+                    Block yNextSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the Y next Section 
+                    if (nowSection.Blocks[bx, sectionLargeEdge - 1, bz].Id == airId ||  // Ylast is air
+
+                        (yNextSectionBlock != null && yNextSectionBlock.Id == airId) || // block in the X Next Section is air
+
+                        (bx > 0 && nowSection.Blocks[bx - 1, sectionLargeEdge, bz].Id == airId) ||
+                        (bx < sectionLargeEdge && nowSection.Blocks[bx + 1, sectionLargeEdge, bz].Id == airId) ||
+                        (bz > 0 && nowSection.Blocks[bx, sectionLargeEdge, bz - 1].Id == airId) ||
+                        (bz < sectionLargeEdge && nowSection.Blocks[bx, sectionLargeEdge, bz + 1].Id == airId))
+                    {
+                        // If the block is visible, create it at once
+                        Block nowBlock = nowSection.Blocks[bx, sectionLargeEdge, bz];
+
+                        this._blockCreator.CreateBlock(nowBlock);
+                    }
+                }
+            }
+            //------------------------------------------------//
+            // Z small edge in the section
+            for (int bx = 0; bx <= sectionLargeEdge; bx++)
+            {
+                for (int by = 0; by <= sectionLargeEdge; by++)
+                {
+                    Vector3Int absolutePosition = new Vector3Int(
+                        nowSectionPosition.x + bx,
+                        nowSectionPosition.y + by,
+                        nowSectionPosition.z - 1);
+
+                    Block zLastSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the Z last Section 
+                    if (nowSection.Blocks[bx, by, sectionSmallEdge + 1].Id == airId ||  // Znext is air
+
+                        (zLastSectionBlock != null && zLastSectionBlock.Id == airId) || // Block in the Z Last Section is air
+
+                        (bx > 0 && nowSection.Blocks[bx - 1, by, sectionSmallEdge].Id == airId) ||
+                        (bx < sectionLargeEdge && nowSection.Blocks[bx + 1, by, sectionSmallEdge].Id == airId) ||
+                        (by > 0 && nowSection.Blocks[bx, by - 1, sectionSmallEdge].Id == airId) ||
+                        (by < sectionLargeEdge && nowSection.Blocks[bx, by + 1, sectionSmallEdge].Id == airId))
+                    {
+                        // If the block is visible, create it at once
+                        Block nowBlock = nowSection.Blocks[bx, by, sectionSmallEdge];
+
+                        this._blockCreator.CreateBlock(nowBlock);
+                    }
+                }
+            }
+            // Z large edge in the section
+            for (int bx = 0; bx <= sectionLargeEdge; bx++)
+            {
+                for (int by = 0; by <= sectionLargeEdge; by++)
+                {
+                    Vector3Int absolutePosition = new Vector3Int(
+                        nowSectionPosition.x + bx,
+                        nowSectionPosition.y + by,
+                        nowSectionPosition.z + LevelInfo.SectionLength);
+
+                    Block zNextSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the Z next Section 
+                    if (nowSection.Blocks[bx, by, sectionLargeEdge - 1].Id == airId ||  // Zlast is air
+
+                        (zNextSectionBlock != null && zNextSectionBlock.Id == airId) || // Block in the Z Next Section is air
+
+                        (bx > 0 && nowSection.Blocks[bx - 1, by, sectionLargeEdge].Id == airId) ||
+                        (bx < sectionLargeEdge && nowSection.Blocks[bx + 1, by, sectionLargeEdge].Id == airId) ||
+                        (by > 0 && nowSection.Blocks[bx, by - 1, sectionLargeEdge].Id == airId) ||
+                        (by < sectionLargeEdge && nowSection.Blocks[bx, by + 1, sectionLargeEdge].Id == airId))
+                    {
+                        // If the block is visible, create it at once
+                        Block nowBlock = nowSection.Blocks[bx, by, sectionLargeEdge];
+
+                        this._blockCreator.CreateBlock(nowBlock);
+                    }
                 }
             }
         }
+
     }
 }
