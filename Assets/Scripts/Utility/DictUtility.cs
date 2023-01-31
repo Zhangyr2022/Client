@@ -29,7 +29,6 @@ public class DictUtility
             // Capitalize the name 
             blockArray[i] = blockArray[i][..1].ToUpper() + blockArray[i][1..];
         }
-        Debug.Log(blockArray);
         return blockArray;
     }
 }

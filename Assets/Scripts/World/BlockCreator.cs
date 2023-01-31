@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BlockCreator : MonoBehaviour
 {
-    public Dictionary<string, int> BlockPrefabDict = new Dictionary<string, int>{
+    public static Dictionary<string, int> BlockPrefabDict = new Dictionary<string, int>{
         {"Air",0},
         {"Stone",1 },
         {"Grass",2 },
@@ -12,21 +12,28 @@ public class BlockCreator : MonoBehaviour
         {"Planks",4 },
         {"Bedrock",5 },
         {"Log",6 },
-        {"Leaves",7 }
+        {"Leaves",7 },
+        {"Cobblestone",8 }
     };
-    public Object[] BlockPrefabs;  // Find in the all prefabs
+    public GameObject[] BlockPrefabs;  // Find in the all prefabs
+
+    public string MissingTextureBlockName = "MissingTextureBlock";
+    public GameObject MissingTextureBlock; // Use this when the texture is not found
 
     // Start is called before the first frame update
     void Start()
     {
         // Load all the Block prefabs
-        BlockPrefabs = new Object[this.BlockPrefabDict.Count];
-        foreach (var prefabInfo in this.BlockPrefabDict)
+        BlockPrefabs = new GameObject[BlockPrefabDict.Count];
+
+        foreach (var prefabInfo in BlockPrefabDict)
         {
             string name = prefabInfo.Key;
             int index = prefabInfo.Value;
-            BlockPrefabs[index] = Resources.Load<Object>($"Blocks/{name}/{name}");
+            BlockPrefabs[index] = Resources.Load<GameObject>($"Blocks/{name}/{name}");
         }
+        // Load Missing texture block
+        MissingTextureBlock = Resources.Load<GameObject>($"Blocks/{MissingTextureBlockName}/{MissingTextureBlockName}");
     }
     /// <summary>
     /// Create a block in the unity (make the block become a GameObject)
@@ -42,19 +49,29 @@ public class BlockCreator : MonoBehaviour
         if (block.Id == 0)
             return false;
 
-        // Get the index in array "BlockPrefabs"
-        int prefabIndex = BlockPrefabDict["Stone"]; // If the cube cannot be found, create stone
+        // The block object to be created
+        GameObject blockObject;
+
         if (BlockPrefabDict.ContainsKey(block.Name))
         {
-            prefabIndex = BlockPrefabDict[block.Name];
+            // Get the index in array "BlockPrefabs"
+            int prefabIndex = BlockPrefabDict[block.Name];
+            // Create block object
+            blockObject = (GameObject)Instantiate(BlockPrefabs[prefabIndex]);
+        }
+        else
+        {
+            // Miss texture
+            blockObject = (GameObject)Instantiate(MissingTextureBlock);
         }
 
-        // Create block object
-        block.BlockObject = (GameObject)Instantiate(BlockPrefabs[prefabIndex]);
+        block.BlockObject = blockObject;
         // Put the object in a right position, its parent is 'BlockCreator' object
         block.BlockObject.transform.parent = this.transform;
         // The center of block is (0.5+x, 0.5+y, 0.5+z)
         block.BlockObject.transform.position = new Vector3(block.Position.x + 0.5f, block.Position.y + 0.5f, block.Position.z + 0.5f);
+
+        // Create the cube successfully!
         return true;
     }
 }

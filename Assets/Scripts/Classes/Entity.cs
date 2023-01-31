@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Entity
+abstract public class Entity
 {
+    public int UniqueId;
+    public Vector3 Position;
+    public GameObject EntityObject;
 }

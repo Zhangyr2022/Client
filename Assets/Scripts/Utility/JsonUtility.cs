@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO.Compression;
 using System.IO;
 using UnityEngine;
+using System.Linq;
 
 public class JsonUtility
 {
@@ -52,6 +53,21 @@ public class JsonUtility
         else
         {
             Dictionary<string, int> dict = JsonConvert.DeserializeObject<Dictionary<string, int>>(json);
+            // Delete the prefix "minecraft:" in keys
+            string prefix = "minecraft:";
+
+            string ReplaceKey(string key, int prefixIndex)
+            {
+                key = key.Substring(prefixIndex + prefix.Length);
+                // Capitalize the name 
+                key = key[..1].ToUpper() + key[1..];
+                return key;
+            };
+
+            dict = dict.ToDictionary(dictItem => dictItem.Key.IndexOf(prefix) == -1 ?
+                dictItem.Key : ReplaceKey(dictItem.Key, dictItem.Key.IndexOf(prefix)),
+                dictItem => dictItem.Value); 
+
             return dict;
         }
     }

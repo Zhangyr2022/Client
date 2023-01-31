@@ -39,6 +39,14 @@ public class Level : MonoBehaviour
     /// The block dict <string name, int id>
     /// </summary>
     public Dictionary<string, int> BlockDict;
+
+    /// <summary>
+    /// Get the private _levelInfo
+    /// </summary>
+    public LevelInfo LevelInformation
+    {
+        get { return _levelInfo; }
+    }
     private void Start()
     {
         // Initialize the Sections
