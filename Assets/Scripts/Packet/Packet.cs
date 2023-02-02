@@ -9,8 +9,6 @@ public enum Bound
 }
 abstract public class Packet
 {
-    private Bound _bound;
-    private string _name;
     /// <summary>
     /// Get packet to be transmitted in the form of json
     /// </summary>

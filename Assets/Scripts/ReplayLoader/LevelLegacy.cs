@@ -73,10 +73,8 @@ public class LevelLegacy : MonoBehaviour
     }
     public void LoadBlockData()
     {
-        // Read the json file
-        JsonTextReader reader = JsonUtility.UnzipLevel(this._levelFile.File);
-        // Process the replay
-        JObject jsonObject = (JObject)JToken.ReadFrom(reader);
+        // Read the json file and process the replay
+        JObject jsonObject = (JsonUtility.UnzipLevel(this._levelFile.File));
         // Deal with Sections: array
         JArray sections = (JArray)jsonObject["sections"];
         Debug.Log(sections.Count);

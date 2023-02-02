@@ -16,15 +16,6 @@ public class Level : MonoBehaviour
     {
         public const int SectionLength = 16;
         public const int BlockNumInSections = SectionLength * SectionLength * SectionLength;
-        /// <summary>
-        /// "Sections" contains all the sections (Dictionary)
-        /// The length of Section.Blocks array must be equal to 'BlockNumInSections'
-        /// </summary>
-        public BlockSource AllBlockSource;
-        public LevelInfo(BlockSource blockSource)
-        {
-            this.AllBlockSource = blockSource;
-        }
     }
     private BlockCreator _blockCreator;
     private LevelInfo _levelInfo;
@@ -49,8 +40,8 @@ public class Level : MonoBehaviour
     }
     private void Start()
     {
-        // Initialize the Sections
-        this._levelInfo = new LevelInfo(new BlockSource());
+        // Initialize the _recordInfo
+        this._levelInfo = new();
         // Initialize the BlockCreator
         this._blockCreator = GameObject.Find("BlockCreator").GetComponent<BlockCreator>();
         // Initialize the Dict and BlockNameArray
@@ -60,10 +51,8 @@ public class Level : MonoBehaviour
         var fileLoaded = GameObject.Find("FileLoaded").GetComponent<FileLoaded>();
         // Check if the file is Level json
         this._levelFile = fileLoaded.File;
-        if (fileLoaded.Type == FileLoaded.FileType.Level)
-        {
-            Run();
-        }
+
+        Run();
     }
     private void Run()
     {
@@ -78,10 +67,8 @@ public class Level : MonoBehaviour
     }
     public void LoadBlockData()
     {
-        // Read the json file
-        JsonTextReader reader = JsonUtility.UnzipLevel(this._levelFile.File);
-        // Process the replay
-        JObject jsonObject = (JObject)JToken.ReadFrom(reader);
+        // Read the json file and Process the replay
+        JObject jsonObject = (JsonUtility.UnzipLevel(this._levelFile.File));
         // Deal with Sections: array
         JArray sections = (JArray)jsonObject["sections"];
         Debug.Log(sections.Count);
@@ -130,17 +117,15 @@ public class Level : MonoBehaviour
             }
             //try
             //{
-            this._levelInfo.AllBlockSource.AddSection(section);
+            BlockSource.AddSection(section);
             //}
             //catch
             //{
             //    Debug.Log(i);
             //    Debug.Log(new Vector3Int(sectionX, sectionY, sectionZ));
             //}
-
         }
         //Debug.Log($"Section num: {this._levelInfo.AllBlockSource.SectionDict.Count}");
-
     }
     public void CheckVisibility()
     {
@@ -155,7 +140,7 @@ public class Level : MonoBehaviour
     private void CheckInnerVisibility()
     {
         int airId = this.BlockDict["Air"];
-        foreach (var blockSourceItem in this._levelInfo.AllBlockSource.SectionDict)
+        foreach (var blockSourceItem in BlockSource.SectionDict)
         {
             // Check visibility in the section
             Section nowSection = blockSourceItem.Value;
@@ -195,7 +180,7 @@ public class Level : MonoBehaviour
         int airId = this.BlockDict["Air"];
 
         int sectionSmallEdge = 0, sectionLargeEdge = LevelInfo.SectionLength - 1;
-        foreach (var blockSourceItem in this._levelInfo.AllBlockSource.SectionDict)
+        foreach (var blockSourceItem in BlockSource.SectionDict)
         {
             // Check visibility on the surface of each section
             Section nowSection = blockSourceItem.Value;
@@ -213,7 +198,7 @@ public class Level : MonoBehaviour
                         nowSectionPosition.y + by,
                         nowSectionPosition.z + bz);
 
-                    Block xLastSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the X Last Section 
+                    Block xLastSectionBlock = BlockSource.GetBlock(absolutePosition);// Block in the X Last Section 
                     if (nowSection.Blocks[sectionSmallEdge + 1, by, bz].Id == airId ||  // Xnext is air
 
                         (xLastSectionBlock != null && xLastSectionBlock.Id == airId) || // Block in the X Last Section is air
@@ -240,7 +225,7 @@ public class Level : MonoBehaviour
                         nowSectionPosition.y + by,
                         nowSectionPosition.z + bz);
 
-                    Block xNextSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the X Next Section 
+                    Block xNextSectionBlock = BlockSource.GetBlock(absolutePosition);// Block in the X Next Section 
                     if (nowSection.Blocks[sectionLargeEdge - 1, by, bz].Id == airId ||  // Xlast is air
 
                         (xNextSectionBlock != null && xNextSectionBlock.Id == airId) || // block in the X Next Section is air
@@ -268,7 +253,7 @@ public class Level : MonoBehaviour
                         nowSectionPosition.y - 1,
                         nowSectionPosition.z + bz);
 
-                    Block yLastSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the Y last Section 
+                    Block yLastSectionBlock = BlockSource.GetBlock(absolutePosition);// Block in the Y last Section 
                     if (nowSection.Blocks[bx, sectionSmallEdge + 1, bz].Id == airId ||  // Ynext is air
 
                         (yLastSectionBlock != null && yLastSectionBlock.Id == airId) || // block in the Y Last Section is air
@@ -295,7 +280,7 @@ public class Level : MonoBehaviour
                         nowSectionPosition.y + LevelInfo.SectionLength,
                         nowSectionPosition.z + bz);
 
-                    Block yNextSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the Y next Section 
+                    Block yNextSectionBlock = BlockSource.GetBlock(absolutePosition);// Block in the Y next Section 
                     if (nowSection.Blocks[bx, sectionLargeEdge - 1, bz].Id == airId ||  // Ylast is air
 
                         (yNextSectionBlock != null && yNextSectionBlock.Id == airId) || // block in the X Next Section is air
@@ -323,7 +308,7 @@ public class Level : MonoBehaviour
                         nowSectionPosition.y + by,
                         nowSectionPosition.z - 1);
 
-                    Block zLastSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the Z last Section 
+                    Block zLastSectionBlock = BlockSource.GetBlock(absolutePosition);// Block in the Z last Section 
                     if (nowSection.Blocks[bx, by, sectionSmallEdge + 1].Id == airId ||  // Znext is air
 
                         (zLastSectionBlock != null && zLastSectionBlock.Id == airId) || // Block in the Z Last Section is air
@@ -350,7 +335,7 @@ public class Level : MonoBehaviour
                         nowSectionPosition.y + by,
                         nowSectionPosition.z + LevelInfo.SectionLength);
 
-                    Block zNextSectionBlock = this._levelInfo.AllBlockSource.GetBlock(absolutePosition);// Block in the Z next Section 
+                    Block zNextSectionBlock = BlockSource.GetBlock(absolutePosition);// Block in the Z next Section 
                     if (nowSection.Blocks[bx, by, sectionLargeEdge - 1].Id == airId ||  // Zlast is air
 
                         (zNextSectionBlock != null && zNextSectionBlock.Id == airId) || // Block in the Z Next Section is air

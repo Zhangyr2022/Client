@@ -46,17 +46,17 @@ public class Upload
     /// <returns>
     /// OpenFileName: The file to be opened
     /// </returns>
-    public OpenFileName UploadDat()
+    public OpenFileName UploadNcLevel()
     {
         OpenFileName openFileName = new OpenFileName();
         openFileName.StructSize = Marshal.SizeOf(openFileName);
-        openFileName.Filter = "DAT文件(*.dat)\0*.dat";
+        openFileName.Filter = "nclevel文件(*.nclevel)\0*.nclevel";
         openFileName.File = new string(new char[256]);
         openFileName.MaxFile = openFileName.File.Length;
         openFileName.FileTitle = new string(new char[64]);
         openFileName.MaxFileTitle = openFileName.FileTitle.Length;
         openFileName.InitialDir = Application.streamingAssetsPath.Replace('/', '\\');//默认路径
-        openFileName.Title = "选择回放dat文件";
+        openFileName.Title = "选择回放nclevel文件";
         openFileName.Flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000008;
 
         if (LocalDialog.GetOpenFileName(openFileName))

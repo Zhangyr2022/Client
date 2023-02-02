@@ -3,12 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ItemCreator : MonoBehaviour
+public class EntityCreator : MonoBehaviour
 {
     /// <summary>
     /// The item is smaller than the block, so (item scale) * _itemScaleRate = (block scale)
     /// </summary>
-    private float _itemScaleRate;
+    private float _itemScaleRate = 8.0f;
     /// <summary>
     /// The continuous item id is defined by ourselves, rather than original edition of MC
     /// Owing to the item also contains the block, we list the block at first
@@ -36,10 +36,7 @@ public class ItemCreator : MonoBehaviour
     };
 
     public GameObject[] ItemPrefabs;
-    /// <summary>
-    /// The allItemDict store all the items in the game 
-    /// </summary>
-    public Dictionary<int, GameObject> allItemDict;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -72,7 +69,7 @@ public class ItemCreator : MonoBehaviour
             return false;
 
         // Create the item if the block hasn't been created
-        if (item.EntityObject != null || allItemDict.ContainsKey(item.UniqueId))
+        if (item.EntityObject != null)
             return false;
 
         GameObject itemObject;
@@ -84,11 +81,12 @@ public class ItemCreator : MonoBehaviour
         item.EntityObject = itemObject;
         // Put the object in a right position, its parent is 'ItemCreator' object
         itemObject.transform.parent = this.transform;
-        // The center of block is (0.5+x, 0.5+y, 0.5+z)
         itemObject.transform.position = item.Position;
+        // Scale
+        itemObject.transform.localScale /= this._itemScaleRate;
 
-        // Add the obj into the allItemDict
-        allItemDict.Add(item.UniqueId, itemObject);
+        // Add item
+        EntitySource.AddItem(item);
 
         // Create the item successfully
         return true;

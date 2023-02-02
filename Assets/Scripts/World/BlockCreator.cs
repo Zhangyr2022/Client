@@ -74,4 +74,29 @@ public class BlockCreator : MonoBehaviour
         // Create the cube successfully!
         return true;
     }
+    /// <summary>
+    /// Update the block according to the position
+    /// </summary>
+    /// <param name="position">The absolute position of the block to be updated</param>
+    /// <param name="blockId">New block id</param>
+    /// <param name="blockName">New block name</param>
+    /// <returns>False if the block cannot be updated</returns>
+    public bool UpdateBlock(Vector3Int position, short blockId, string blockName)
+    {
+        Block block = BlockSource.GetBlock(position);
+        // False if the block cannot be found or its gameobject hasn't already created
+        if (block == null || block.BlockObject == null)
+        {
+            return false;
+        }
+
+        // Update info
+        Destroy(block.BlockObject);
+        block.Id = blockId;
+        block.Name = blockName;
+
+        CreateBlock(block);
+
+        return true;
+    }
 }

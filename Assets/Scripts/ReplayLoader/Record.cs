@@ -4,48 +4,277 @@ using UnityEngine;
 using UnityEngine.UI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-/// <summary>
-/// This script must be bound in a button
-/// </summary>
+using static UnityEditor.Progress;
+using Unity.VisualScripting;
+using static UnityEngine.EventSystems.EventTrigger;
+
 public class Record : MonoBehaviour
 {
+    public enum PlayState
+    {
+        Prepare,
+        Play,
+        Pause,
+        End
+    }
     public class RecordInfo
     {
-
-    }
-
-    private Upload _upload = new() { };
-    private Upload.OpenFileName _replayFile = new() { };
-    private void Start()
-    {
-        this.GetComponent<Button>().onClick.AddListener(Clicked);
-    }
-    private void Clicked()
-    {
-        // Get json file
-        this._replayFile = this._upload.UploadDat();
-        // Check
-        if (this._replayFile == null)
+        // 20 frame per second
+        public const float FrameTime = 0.05f;
+        public PlayState NowPlayState = PlayState.Play;
+        public int NowTick = 0;
+        /// <summary>
+        /// Now record serial number
+        /// </summary>
+        public int NowRecordNum = 0;
+        /// <summary>
+        /// The speed of the record which can be negative
+        /// </summary>
+        public float RecordSpeed = 0.1f;
+        /// <summary>
+        /// Contains all the item in the game
+        /// </summary>
+        public float NowframeTime
         {
-            return;
+            get
+            {
+                return FrameTime / RecordSpeed;
+            }
         }
-
-        // Read the json file
-        JsonTextReader reader = ReadJsonFile(this._replayFile);
-        // Process the replay
-        JObject jsonObject = (JObject)JToken.ReadFrom(reader);
-        // Deal with Sections: array
-        Debug.Log(jsonObject["section"].ToString());
+        /// <summary>
+        /// If NowDeltaTime is larger than NowframeTime, then play the next frame
+        /// </summary>
+        public float NowDeltaTime = 0;
+    }
+    private BlockCreator _blockCreator;
+    private EntityCreator _entityCreator;
+    private RecordInfo _recordInfo;
+    private Upload _upload = new() { };
+    private Upload.OpenFileName _recordFile = new() { };
+    private JArray _recordArray;
+    public RecordInfo RecordInformation
+    {
+        get
+        {
+            return this._recordInfo;
+        }
     }
     /// <summary>
-    /// Parse the json file
+    /// Get the block name using block id
     /// </summary>
-    /// <param name="fileInfo">The file from class Upload.OpenFileName</param>
-    /// <returns></returns>
-    public JsonTextReader ReadJsonFile(Upload.OpenFileName fileInfo)
-    {
-        System.IO.StreamReader file = System.IO.File.OpenText(this._replayFile.File);
-        return new JsonTextReader(file);
-    }
+    public string[] BlockNameArray;
 
+    /// <summary>
+    /// The block dict <string name, int id>
+    /// </summary>
+    public Dictionary<string, int> BlockDict;
+
+    private void Start()
+    {
+        // Initialize the _recordInfo
+        this._recordInfo = new();
+        // Initialize the BlockCreator
+        this._blockCreator = GameObject.Find("BlockCreator").GetComponent<BlockCreator>();
+        // Initialize the ItemCreator
+        this._entityCreator = GameObject.Find("EntityCreator").GetComponent<EntityCreator>();
+        // Get json file
+        var fileLoaded = GameObject.Find("FileLoaded").GetComponent<FileLoaded>();
+        // Initialize the Dict and BlockNameArray
+        this.BlockDict = JsonUtility.ParseBlockDictJson("Json/Dict");
+        this.BlockNameArray = DictUtility.BlockDictParser(this.BlockDict);
+        // Check if the file is Level json
+        this._recordFile = fileLoaded.File;
+
+        // Check
+        if (this._recordFile == null)
+        {
+            Debug.Log("Loading file error!");
+            return;
+        }
+        this._recordArray = LoadRecordData();
+    }
+    private JArray LoadRecordData()
+    {
+        JObject recordJsonObject = JsonUtility.UnzipRecord(this._recordFile.File);
+        // Load the record array
+        JArray recordArray = (JArray)recordJsonObject["records"];
+
+        if (recordArray == null)
+        {
+            Debug.Log("Record file is empty!");
+            return null;
+        }
+        Debug.Log(recordArray.ToString());
+        return recordArray;
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    private void UpdateTick()
+    {
+        // Play
+        if (this._recordInfo.RecordSpeed > 0)
+        {
+            // Ticks
+            this._recordInfo.NowTick++;
+
+            JToken nowRecord = this._recordArray[this._recordInfo.NowRecordNum];
+            int nextRecordTick = int.Parse(nowRecord["ticks"].ToString());
+            // If the next record tick is greater than now tick, this implies there is nothing to update in this tick 
+            if (nextRecordTick > this._recordInfo.NowTick)
+            {
+                return;
+            }
+            // Else 
+            this._recordInfo.NowRecordNum++;
+
+            // Blocks
+            JToken blocks = nowRecord["blocks"];
+            if (blocks != null)
+            {
+                // Update block
+                //blocks = (JArray)blocks;
+                foreach (JObject block in blocks)
+                {
+                    int x = int.Parse(block["x"].ToString());
+                    int y = int.Parse(block["y"].ToString());
+                    int z = int.Parse(block["z"].ToString());
+                    short id = short.Parse(block["id"].ToString());
+                    this._blockCreator.UpdateBlock(new Vector3Int(x, y, z), id, BlockNameArray[id]);
+                }
+            }
+
+            // Entities
+            JToken entities = nowRecord["entities"];
+            if (entities != null)
+            {
+                //Debug.Log(entities.ToString());
+                foreach (JObject entity in entities)
+                {
+
+                    int entityId = int.Parse(entity["entity_id"].ToString());// 0: player; 1: item
+                    int uniqueId = int.Parse(entity["unique_id"].ToString());
+
+                    Vector3 position = new();
+                    int itemType = 0;
+
+                    // Judge whether this entity will be spawned in this tick so that we can get its spawning position 
+                    bool hasSpawnEvent = false;
+                    JToken entityEvent = entity["event"];
+                    if (entityEvent != null)
+                    {
+                        string eventName = entityEvent.ToString();
+                        if (eventName == "spawn")
+                        {
+                            hasSpawnEvent = true;
+                        }
+                    }
+                    // Data value: the type of item
+                    JToken itemTypeToken = entity["data_value"];
+                    if (itemTypeToken != null)
+                    {
+                        itemType = int.Parse(itemTypeToken.ToString());
+                    }
+
+                    // Postion
+                    JToken positionToken = entity["position"];
+                    if (positionToken != null)
+                    {
+                        if (entityId == 1)
+                        {
+                            // Find if the token exist
+                            Item item = EntitySource.GetItem(uniqueId);
+                            if (item != null || hasSpawnEvent)
+                            {
+                                // Get the position of x,y,z
+                                float itemX = float.Parse(positionToken["x"].ToString());
+                                float itemY = float.Parse(positionToken["y"].ToString());
+                                float itemZ = float.Parse(positionToken["z"].ToString());
+                                // Update the position
+                                position = new Vector3(itemX, itemY, itemZ);
+                                if (item != null)
+                                {
+                                    item.UpdatePosition(position);
+                                }
+                            }
+                        }
+                    }
+                    // Orientation: (to be checked)
+                    JToken orientationToken = entity["orientation"];
+                    if (orientationToken != null)
+                    {
+                        if (entityId == 1)
+                        {
+                            // Find if the token exist
+                            Item item = EntitySource.GetItem(uniqueId);
+                            if (item != null)
+                            {
+                                // Get the pitch, yaw
+                                int pitch = int.Parse(orientationToken["pitch"].ToString());
+                                int yaw = int.Parse(orientationToken["yaw"].ToString());
+                                // Update the orientation
+                                item.UpdateOrientation(pitch, yaw);
+                            }
+                        }
+                    }
+
+                    // Event: spawn / despawn
+                    if (entityEvent != null)
+                    {
+                        string eventName = entityEvent.ToString();
+                        if (eventName == "spawn" && entityId == 0)
+                        {
+
+                        }
+                        else if (eventName == "spawn" && entityId == 1)
+                        {
+                            if (this._entityCreator.CreateItem(new Item(uniqueId, position, itemType)) == false)
+                            {
+                                Debug.Log("Create item error!");
+                            }
+                            else
+                            {
+                                Debug.Log("Create item successfully!");
+                            }
+                        }
+                        else if (eventName == "despawn" && entityId == 0)
+                        {
+
+                        }
+                        else if (eventName == "despawn" && entityId == 1)
+                        {
+                            if (this._entityCreator.DeleteItem(new Item(uniqueId, position, itemType)) == false)
+                            {
+                                Debug.Log("Delete item error!");
+                            }
+                        }
+                    }
+                }
+            }
+            // Player nowRecord
+        }
+        // Upend
+        else
+        {
+
+        }
+
+    }
+    private void Update()
+    {
+        if (this._recordInfo.NowPlayState == PlayState.Play &&
+            this._recordInfo.NowRecordNum < this._recordArray.Count)
+        {
+            if (this._recordInfo.NowDeltaTime > this._recordInfo.NowframeTime)
+            {
+                UpdateTick();
+                this._recordInfo.NowDeltaTime = 0;
+            }
+            else
+            {
+                this._recordInfo.NowDeltaTime += Time.deltaTime;
+            }
+        }
+    }
 }
+

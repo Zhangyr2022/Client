@@ -9,9 +9,9 @@ public class Observe : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
-        Cursor.visible = false; // Make the mouse ptr disappear
+        // Cursor.visible = false; // Make the mouse ptr disappear
         MoveSpeed = 20f;
-        RotateSpeed = 20f;
+        RotateSpeed = 140f;
     }
     private void Move()
     {
@@ -29,20 +29,35 @@ public class Observe : MonoBehaviour
             // move aside 
             transform.Translate(MoveSpeed * Time.deltaTime * Horizontal * transform.right, Space.World);
         }
+
+        // Fly up if space is clicked
+        if (Input.GetKey(KeyCode.Space))
+        {
+            transform.Translate(MoveSpeed * Time.deltaTime * Vector3.up, Space.World);
+        }
+        // Fly down if left shift is clicked
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            transform.Translate(MoveSpeed * Time.deltaTime * Vector3.down, Space.World);
+        }
     }
     private void Rotate()
     {
-        float MouseX = Input.GetAxis("Mouse X");
-        float MouseY = Input.GetAxis("Mouse Y");
-
-        if ((Mathf.Abs(MouseX) > 0.01 || Mathf.Abs(MouseY) > 0.01))
+        // Rotate when the MouseRightKey is clicked 
+        if (Input.GetMouseButton(1))
         {
-            transform.Rotate(new Vector3(0, MouseX * RotateSpeed * Time.deltaTime, 0), Space.World);
-            transform.Rotate(new Vector3(-MouseY * RotateSpeed * Time.deltaTime * 1.5f, 0, 0));
+            float MouseX = Input.GetAxis("Mouse X");
+            float MouseY = Input.GetAxis("Mouse Y");
+
+            if ((Mathf.Abs(MouseX) > 0.01 || Mathf.Abs(MouseY) > 0.01))
+            {
+                transform.Rotate(new Vector3(0, MouseX * RotateSpeed * Time.deltaTime, 0), Space.World);
+                transform.Rotate(new Vector3(-MouseY * RotateSpeed * Time.deltaTime * 1.5f, 0, 0));
+            }
         }
     }
     // Update is called once per frame
-    private void FixedUpdate()
+    private void Update()
     {
         Move();
         Rotate();
