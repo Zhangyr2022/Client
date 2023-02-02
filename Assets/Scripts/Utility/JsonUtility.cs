@@ -39,13 +39,9 @@ public class JsonUtility
     /// <exception cref="Exception"></exception>
     public static JObject UnzipRecord(string path)
     {
-        //string unityPath = Application.dataPath + "/";
-        //ZipFile.ExtractToDirectory(path, $"{path}.unzip");
         ZipArchive mcLevelDataZipFile = ZipFile.OpenRead(path);
 
         Debug.Log($"entry count: {mcLevelDataZipFile.Entries.Count}");
-        //ZipArchiveEntry mcLevelDataEntryStream = mcLevelDataZipFile.GetEntry("records") ??
-        // throw new Exception("mcLevel data not found in zip archive.");
 
         // Load all the record entry
         List<JObject> allRecordJsonObject = new();
@@ -61,7 +57,7 @@ public class JsonUtility
 
                 StreamReader recordStreamReader = new(recordZipArchive.Entries[0].Open());
                 allRecordJsonObject.Add((JObject)JToken.ReadFrom(new JsonTextReader(recordStreamReader)));
-                Debug.Log(recordStreamReader.ReadToEnd().ToString());
+                //Debug.Log(recordStreamReader.ReadToEnd().ToString());
             }
         }
 

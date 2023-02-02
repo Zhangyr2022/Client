@@ -8,7 +8,7 @@ public class EntityCreator : MonoBehaviour
     /// <summary>
     /// The item is smaller than the block, so (item scale) * _itemScaleRate = (block scale)
     /// </summary>
-    private float _itemScaleRate = 8.0f;
+    private float _itemScaleRate = 2f;
     /// <summary>
     /// The continuous item id is defined by ourselves, rather than original edition of MC
     /// Owing to the item also contains the block, we list the block at first
@@ -34,8 +34,14 @@ public class EntityCreator : MonoBehaviour
         "StoneAxe",
         "Stick"
     };
-
     public GameObject[] ItemPrefabs;
+
+    // Player
+    public static string[] PlayerArray =
+    {
+        "Steve"
+    };
+    public GameObject[] PlayerPrefabs;
 
     // Start is called before the first frame update
     void Start()
@@ -43,6 +49,7 @@ public class EntityCreator : MonoBehaviour
         // Initialize the "ItemPrefabs"
         ItemPrefabs = new GameObject[ItemArray.Length];
 
+        // Item entity
         for (int i = 0; i < ItemArray.Length; i++)
         {
             string itemName = ItemArray[i];
@@ -55,6 +62,14 @@ public class EntityCreator : MonoBehaviour
             {
                 ItemPrefabs[i] = Resources.Load<GameObject>($"Items/{itemName}/{itemName}");
             }
+        }
+        // Player entity
+        PlayerPrefabs = new GameObject[PlayerArray.Length];
+
+        for (int i = 0; i < PlayerArray.Length; i++)
+        {
+            string playerName = PlayerArray[i];
+            PlayerPrefabs[i] = Resources.Load<GameObject>($"Player/{playerName}/{playerName}");
         }
     }
     /// <summary>
@@ -84,7 +99,8 @@ public class EntityCreator : MonoBehaviour
         itemObject.transform.position = item.Position;
         // Scale
         itemObject.transform.localScale /= this._itemScaleRate;
-
+        // Add Interpolate Movement
+        itemObject.AddComponent<InterpolateMovement>();
         // Add item
         EntitySource.AddItem(item);
 
@@ -98,9 +114,26 @@ public class EntityCreator : MonoBehaviour
     /// <returns></returns>
     public bool DeleteItem(Item item)
     {
-        // Delete the item from dict
+        // False if the item not exist
+        if (item == null) return false;
 
+        // Check if the item obj exists
+        if (item.EntityObject != null)
+        {
+            Destroy(item.EntityObject);
+        }
+        // Delete the item from dict
+        if (EntitySource.ItemDict.ContainsKey(item.UniqueId))
+        {
+            EntitySource.ItemDict.Remove(item.UniqueId);
+        }
         // Delete the item successfully
         return true;
+    }
+    public bool CreatePlayer(Player player)
+    {
+        return true;
+        // Add Interpolate Movement
+        //playerObject.AddComponent<InterpolateMovement>();
     }
 }

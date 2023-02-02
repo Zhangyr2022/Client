@@ -4,9 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using static UnityEditor.Progress;
-using Unity.VisualScripting;
-using static UnityEngine.EventSystems.EventTrigger;
+using TMPro;
 
 public class Record : MonoBehaviour
 {
@@ -21,7 +19,7 @@ public class Record : MonoBehaviour
     {
         // 20 frame per second
         public const float FrameTime = 0.05f;
-        public PlayState NowPlayState = PlayState.Play;
+        public PlayState NowPlayState = PlayState.Pause;
         public int NowTick = 0;
         /// <summary>
         /// Now record serial number
@@ -30,7 +28,10 @@ public class Record : MonoBehaviour
         /// <summary>
         /// The speed of the record which can be negative
         /// </summary>
-        public float RecordSpeed = 0.1f;
+        public float RecordSpeed = 1f;
+        public const float MinSpeed = -5f;
+        public const float MaxSpeed = 5f;
+
         /// <summary>
         /// Contains all the item in the game
         /// </summary>
@@ -52,6 +53,24 @@ public class Record : MonoBehaviour
     private Upload _upload = new() { };
     private Upload.OpenFileName _recordFile = new() { };
     private JArray _recordArray;
+
+    /// <summary>
+    /// Stop / Continue button
+    /// </summary>
+    private Button _stopButton;
+    /// <summary>
+    /// The stop sprite
+    /// </summary>
+    private Sprite _stopButtonSprite;
+    private Sprite _continueButtonSprite;
+    /// <summary>
+    /// The slider which can change the record playing rate
+    /// </summary>
+    private Slider _recordSpeedSlider;
+    private TMP_Text _recordSpeedText;
+    private float _recordSpeedSliderMinValue;
+    private float _recordSpeedSliderMaxValue;
+
     public RecordInfo RecordInformation
     {
         get
@@ -84,6 +103,54 @@ public class Record : MonoBehaviour
         this.BlockNameArray = DictUtility.BlockDictParser(this.BlockDict);
         // Check if the file is Level json
         this._recordFile = fileLoaded.File;
+
+        // GUI //
+
+        // Get stop button 
+        this._stopButton = GameObject.Find("Canvas/StopButton").GetComponent<Button>();
+        // Get stop button sprites
+        this._stopButtonSprite = Resources.Load<Sprite>("GUI/Button/StopButton");
+        this._continueButtonSprite = Resources.Load<Sprite>("GUI/Button/ContinueButton");
+        Debug.Log(this._stopButtonSprite);
+        // Pause at beginning
+        this._stopButton.GetComponent<Image>().sprite = _continueButtonSprite;
+        // Add listener to stop button
+        this._stopButton.onClick.AddListener(() =>
+        {
+            if (this._recordInfo.NowPlayState == PlayState.Play)
+            {
+                this._stopButton.GetComponent<Image>().sprite = this._continueButtonSprite;
+                this._recordInfo.NowPlayState = PlayState.Pause;
+            }
+            else if (this._recordInfo.NowPlayState == PlayState.Pause)
+            {
+                this._stopButton.GetComponent<Image>().sprite = this._stopButtonSprite;
+                this._recordInfo.NowPlayState = PlayState.Play;
+            }
+        });
+
+
+        // Record playing rate slider
+        this._recordSpeedSlider = GameObject.Find("Canvas/RecordSpeedSlider").GetComponent<Slider>();
+        this._recordSpeedText = GameObject.Find("Canvas/RecordSpeedSlider/Value").GetComponent<TMP_Text>();
+
+        this._recordSpeedSliderMinValue = this._recordSpeedSlider.minValue;
+        this._recordSpeedSliderMaxValue = this._recordSpeedSlider.maxValue;
+        // Set the default slider speed to 1;
+        // Linear: 0~1
+        float speedRate = (1 - RecordInfo.MinSpeed) / (RecordInfo.MaxSpeed - RecordInfo.MinSpeed);
+        this._recordSpeedSlider.value = this._recordSpeedSliderMinValue + (this._recordSpeedSliderMaxValue - this._recordSpeedSliderMinValue) * speedRate;
+        // Add listenr
+        this._recordSpeedSlider.onValueChanged.AddListener((float value) =>
+        {
+            // Linear
+            float sliderRate = (value - this._recordSpeedSliderMinValue) / (this._recordSpeedSliderMaxValue - this._recordSpeedSliderMinValue);
+            // Compute current speed
+            this._recordInfo.RecordSpeed = RecordInfo.MinSpeed + (RecordInfo.MaxSpeed - RecordInfo.MinSpeed) * sliderRate;
+            // Update speed text
+            _recordSpeedText.text = $"Speed: {Mathf.Round(this._recordInfo.RecordSpeed * 100) / 100f:F2}";
+        });
+
 
         // Check
         if (this._recordFile == null)
@@ -151,7 +218,6 @@ public class Record : MonoBehaviour
                 //Debug.Log(entities.ToString());
                 foreach (JObject entity in entities)
                 {
-
                     int entityId = int.Parse(entity["entity_id"].ToString());// 0: player; 1: item
                     int uniqueId = int.Parse(entity["unique_id"].ToString());
 

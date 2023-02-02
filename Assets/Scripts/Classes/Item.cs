@@ -8,6 +8,11 @@ public class Item : Entity
     /// Different from this._uniqueId, the Id is the type of this item
     /// </summary>
     public int Id;
+    /// <summary>
+    /// Owing to the item should move more continuously, so we use interpolation.
+    /// This position represant real position of the gameobject
+    /// </summary>
+    //private Vector3 _nowPosition;
     public Item(int uniqueId, Vector3 position, int id)
     {
         this.UniqueId = uniqueId;
@@ -24,7 +29,17 @@ public class Item : Entity
         this.Position = newPosition;
         if (this.EntityObject != null)
         {
-            this.EntityObject.transform.position = newPosition;
+            if (this.InterpolateMove != null)
+            {
+                // Interpolation movement
+                this.InterpolateMove.SetTargetPosition(newPosition);
+            }
+            else
+            {
+                this.InterpolateMove = this.EntityObject.GetComponent<InterpolateMovement>();
+                // No Interpolation movement
+                this.EntityObject.transform.position = newPosition;
+            }
         }
     }
     public void UpdateOrientation(int pitch, int yaw)
