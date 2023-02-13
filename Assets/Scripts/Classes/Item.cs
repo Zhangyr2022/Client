@@ -19,6 +19,7 @@ public class Item : Entity
         this.Position = position;
         this.Id = id;
         this.EntityObject = null;
+        this.yaw = this.pitch = 0;
     }
     /// <summary>
     /// Change the position of this item

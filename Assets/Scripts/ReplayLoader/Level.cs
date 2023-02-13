@@ -21,15 +21,7 @@ public class Level : MonoBehaviour
     private LevelInfo _levelInfo;
     private Upload _upload = new() { };
     private Upload.OpenFileName _levelFile = new() { };
-    /// <summary>
-    /// Get the block name using block id
-    /// </summary>
-    public string[] BlockNameArray;
 
-    /// <summary>
-    /// The block dict <string name, int id>
-    /// </summary>
-    public Dictionary<string, int> BlockDict;
 
     /// <summary>
     /// Get the private _levelInfo
@@ -44,9 +36,6 @@ public class Level : MonoBehaviour
         this._levelInfo = new();
         // Initialize the BlockCreator
         this._blockCreator = GameObject.Find("BlockCreator").GetComponent<BlockCreator>();
-        // Initialize the Dict and BlockNameArray
-        this.BlockDict = JsonUtility.ParseBlockDictJson("Json/Dict");
-        this.BlockNameArray = DictUtility.BlockDictParser(this.BlockDict);
         // Get json file
         var fileLoaded = GameObject.Find("FileLoaded").GetComponent<FileLoaded>();
         // Check if the file is Level json
@@ -103,13 +92,13 @@ public class Level : MonoBehaviour
                 // Add name according to _blockNameArray
                 try
                 {
-                    section.Blocks[x, y, z].Name = BlockNameArray[section.Blocks[x, y, z].Id];
+                    section.Blocks[x, y, z].Name = BlockDicts.BlockNameArray[section.Blocks[x, y, z].Id];
                 }
                 catch
                 {
-                    Debug.Log(BlockNameArray);
+                    Debug.Log(BlockDicts.BlockNameArray);
                     Debug.Log(section.Blocks[x, y, z].Id);
-                    section.Blocks[x, y, z].Name = BlockNameArray[0];
+                    section.Blocks[x, y, z].Name = BlockDicts.BlockNameArray[0];
                     section.Blocks[x, y, z].Id = 0;
                 }
                 // Compute absolute position
@@ -139,7 +128,7 @@ public class Level : MonoBehaviour
     /// <returns></returns>
     private void CheckInnerVisibility()
     {
-        int airId = this.BlockDict["Air"];
+        int airId = BlockDicts.BlockDict["Air"];
         foreach (var blockSourceItem in BlockSource.SectionDict)
         {
             // Check visibility in the section
@@ -177,7 +166,7 @@ public class Level : MonoBehaviour
     /// <returns></returns>
     private void CheckNeighbourVisibility()
     {
-        int airId = this.BlockDict["Air"];
+        int airId = BlockDicts.BlockDict["Air"];
 
         int sectionSmallEdge = 0, sectionLargeEdge = LevelInfo.SectionLength - 1;
         foreach (var blockSourceItem in BlockSource.SectionDict)

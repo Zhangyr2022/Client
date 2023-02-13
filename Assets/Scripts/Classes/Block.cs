@@ -8,4 +8,11 @@ public class Block
     public string Name;
     public Vector3Int Position;// The absolute position in the map
     public GameObject BlockObject; // If the block is not created, this variable will be null
+    public Block(short id, Vector3Int position, GameObject blockObject = null)
+    {
+        this.Id = id;
+        this.Name = BlockDicts.BlockNameArray[id];
+        this.Position = position;
+        this.BlockObject = blockObject;
+    }
 }

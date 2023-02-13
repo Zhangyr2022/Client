@@ -78,15 +78,6 @@ public class Record : MonoBehaviour
             return this._recordInfo;
         }
     }
-    /// <summary>
-    /// Get the block name using block id
-    /// </summary>
-    public string[] BlockNameArray;
-
-    /// <summary>
-    /// The block dict <string name, int id>
-    /// </summary>
-    public Dictionary<string, int> BlockDict;
 
     private void Start()
     {
@@ -98,9 +89,6 @@ public class Record : MonoBehaviour
         this._entityCreator = GameObject.Find("EntityCreator").GetComponent<EntityCreator>();
         // Get json file
         var fileLoaded = GameObject.Find("FileLoaded").GetComponent<FileLoaded>();
-        // Initialize the Dict and BlockNameArray
-        this.BlockDict = JsonUtility.ParseBlockDictJson("Json/Dict");
-        this.BlockNameArray = DictUtility.BlockDictParser(this.BlockDict);
         // Check if the file is Level json
         this._recordFile = fileLoaded.File;
 
@@ -207,7 +195,7 @@ public class Record : MonoBehaviour
                     int y = int.Parse(block["y"].ToString());
                     int z = int.Parse(block["z"].ToString());
                     short id = short.Parse(block["id"].ToString());
-                    this._blockCreator.UpdateBlock(new Vector3Int(x, y, z), id, BlockNameArray[id]);
+                    this._blockCreator.UpdateBlock(new Vector3Int(x, y, z), id, BlockDicts.BlockNameArray[id]);
                 }
             }
 
@@ -225,14 +213,18 @@ public class Record : MonoBehaviour
                     int itemType = 0;
 
                     // Judge whether this entity will be spawned in this tick so that we can get its spawning position 
-                    bool hasSpawnEvent = false;
-                    JToken entityEvent = entity["event"];
-                    if (entityEvent != null)
+                    Entity.Event entityEvent = Entity.Event.None;
+                    JToken entityEventToken = entity["event"];
+                    if (entityEventToken != null)
                     {
-                        string eventName = entityEvent.ToString();
+                        string eventName = entityEventToken.ToString();
                         if (eventName == "spawn")
                         {
-                            hasSpawnEvent = true;
+                            entityEvent = Entity.Event.Spawn;
+                        }
+                        else if (eventName == "despawn")
+                        {
+                            entityEvent = Entity.Event.Despawn;
                         }
                     }
                     // Data value: the type of item
@@ -250,7 +242,7 @@ public class Record : MonoBehaviour
                         {
                             // Find if the token exist
                             Item item = EntitySource.GetItem(uniqueId);
-                            if (item != null || hasSpawnEvent)
+                            if (item != null || entityEvent == Entity.Event.Spawn)
                             {
                                 // Get the position of x,y,z
                                 float itemX = float.Parse(positionToken["x"].ToString());
@@ -285,14 +277,13 @@ public class Record : MonoBehaviour
                     }
 
                     // Event: spawn / despawn
-                    if (entityEvent != null)
+                    if (entityEventToken != null)
                     {
-                        string eventName = entityEvent.ToString();
-                        if (eventName == "spawn" && entityId == 0)
+                        if (entityEvent == Entity.Event.Spawn && entityId == 0)
                         {
-
+                            // Player
                         }
-                        else if (eventName == "spawn" && entityId == 1)
+                        else if (entityEvent == Entity.Event.Spawn && entityId == 1)
                         {
                             if (this._entityCreator.CreateItem(new Item(uniqueId, position, itemType)) == false)
                             {
@@ -303,11 +294,11 @@ public class Record : MonoBehaviour
                                 Debug.Log("Create item successfully!");
                             }
                         }
-                        else if (eventName == "despawn" && entityId == 0)
+                        else if (entityEvent == Entity.Event.Despawn && entityId == 0)
                         {
 
                         }
-                        else if (eventName == "despawn" && entityId == 1)
+                        else if (entityEvent == Entity.Event.Despawn && entityId == 1)
                         {
                             if (this._entityCreator.DeleteItem(new Item(uniqueId, position, itemType)) == false)
                             {

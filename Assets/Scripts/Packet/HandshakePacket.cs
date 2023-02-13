@@ -5,8 +5,6 @@ using UnityEngine;
 
 public class HandshakePacket : Packet
 {
-    private Bound _bound;
-    private string _type;
     private int _version; // enum ??
     private string _token;
     public string Token
@@ -21,8 +19,6 @@ public class HandshakePacket : Packet
     }
     public HandshakePacket(string token = null)
     {
-        _bound = Bound.Serverbound;
-        _type = "handshake";
         _version = 1;
         _token = token;
     }
@@ -30,8 +26,8 @@ public class HandshakePacket : Packet
     {
         JObject jsonPacket = new JObject();
 
-        jsonPacket["severbound"] = (_bound).ToString();
-        jsonPacket["type"] = _type;
+        jsonPacket["bound_to"] = "serverbound";
+        jsonPacket["type"] = "handshake";
         jsonPacket["protocol_version"] = _version;
         jsonPacket["token"] = _token;
 
@@ -41,7 +37,7 @@ public class HandshakePacket : Packet
     {
         // Check type
         JToken typeToken = serverPacket["type"];
-        if (typeToken == null || typeToken.ToString() != this._type) return false;
+        if (typeToken == null || typeToken.ToString() != "handshake") return false;
 
         JToken token = serverPacket["token"].ToString();
         if (token == null)
