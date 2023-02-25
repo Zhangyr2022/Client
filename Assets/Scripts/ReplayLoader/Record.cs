@@ -5,9 +5,6 @@ using UnityEngine.UI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TMPro;
-using System.Xml;
-using UnityEngine.Events;
-using static UnityEditor.Progress;
 
 public class Record : MonoBehaviour
 {
@@ -173,7 +170,7 @@ public class Record : MonoBehaviour
     /// <param name="eventDataJson"></param>
     private void AfterEntityCreateEvent(JObject eventDataJson)
     {
-        JArray creationList = (JArray)eventDataJson["creationList"];
+        JArray creationList = (JArray)eventDataJson["creation_list"];
         foreach (JObject entityJson in creationList)
         {
             int entityId = (int)entityJson["entity_type_id"];
@@ -201,7 +198,8 @@ public class Record : MonoBehaviour
             else if (entityId == 1)
             {
                 // Item
-                int itemTypeId = (int)entityJson["item_type_id"];
+                int itemTypeId = (int)(entityJson["item_type_id"] ?? 12);
+
                 if (this._entityCreator.CreateItem(new Item(uniqueId, position, itemTypeId)) == true)
                 {
                     Debug.Log($"Create item (id: {itemTypeId}, unique_id: {uniqueId}) successfully!");
@@ -280,11 +278,10 @@ public class Record : MonoBehaviour
         {
             List<JObject> nowEventsJson = new();
             // Find all the events at now tick
-            for (; this._recordInfo.NowRecordNum + 1 < this._recordArray.Count;
-                this._recordInfo.NowRecordNum++)
+            for (; this._recordInfo.NowRecordNum < this._recordArray.Count; this._recordInfo.NowRecordNum++)
             {
-                JObject nowEvent = (JObject)this._recordArray[this._recordInfo.NowRecordNum + 1];
-                if (this._recordInfo.NowTick < (int)nowEvent["tick"])
+                JObject nowEvent = (JObject)this._recordArray[this._recordInfo.NowRecordNum];
+                if (this._recordInfo.NowTick == (int)nowEvent["tick"])
                 {
                     nowEventsJson.Add(nowEvent);
                 }
@@ -293,18 +290,18 @@ public class Record : MonoBehaviour
                     break;
                 }
             }
-
             foreach (var nowEventJson in nowEventsJson)
             {
+
                 if (nowEventJson["type"].ToString() == "event")
                 {
                     JObject nowEventDataJson = (JObject)nowEventJson["data"];
                     switch (nowEventJson["identifier"].ToString())
                     {
-                        case "after_entity_create_event_record":
+                        case "after_entity_create":
                             this.AfterEntityCreateEvent(nowEventDataJson);
                             break;
-                        case "after_entity_position_change_event_record":
+                        case "after_entity_position_change":
                             this.AfterEntityPositionChangeEvent(nowEventDataJson);
                             break;
                         default:

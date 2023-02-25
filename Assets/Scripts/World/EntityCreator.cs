@@ -81,7 +81,7 @@ public class EntityCreator : MonoBehaviour
     public bool CreateItem(Item item)
     {
         // Create the item if the block is not air and in the bounds of ItemArray
-        if (item.Id <= 0 || item.Id >= ItemArray.Length)
+        if (item.Id < 0 || item.Id >= ItemArray.Length)
             return false;
 
         // Create the item if the block hasn't been created

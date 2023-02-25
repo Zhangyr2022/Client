@@ -29,6 +29,12 @@ public class Player : Entity
         this.yaw = yaw;
         this.pitch = pitch;
     }
+    public Player()
+    {
+        this.EntityId = 0;
+        this.yaw = 0;
+        this.pitch = 0;
+    }
     public void UpdatePosition(Vector3 newPosition)
     {
 

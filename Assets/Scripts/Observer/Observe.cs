@@ -4,12 +4,14 @@ using UnityEngine;
 
 public class Observe : MonoBehaviour
 {
-    public float MoveSpeed = 20f;
-    public float RotateSpeed = 140f;
-    public static Vector3 InitialPosition = new(0, 256, 0);
+    public float MoveSpeed;
+    public float RotateSpeed;
+    public static Vector3 InitialPosition = new(0, 128, 0);
     // Start is called before the first frame update
     private void Start()
     {
+        MoveSpeed = 20f;
+        RotateSpeed = 140f;
         // Cursor.visible = false; // Make the mouse ptr disappear
         this.transform.position = InitialPosition;
     }
