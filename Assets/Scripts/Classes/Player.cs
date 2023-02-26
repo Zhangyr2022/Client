@@ -37,6 +37,21 @@ public class Player : Entity
     }
     public void UpdatePosition(Vector3 newPosition)
     {
-
+        // To be changed
+        this.Position = newPosition;
+        if (this.EntityObject != null)
+        {
+            if (this.InterpolateMove != null)
+            {
+                // Interpolation movement
+                this.InterpolateMove.SetTargetPosition(newPosition);
+            }
+            else
+            {
+                this.InterpolateMove = this.EntityObject.GetComponent<InterpolateMovement>();
+                // No Interpolation movement
+                this.EntityObject.transform.position = newPosition;
+            }
+        }
     }
 }

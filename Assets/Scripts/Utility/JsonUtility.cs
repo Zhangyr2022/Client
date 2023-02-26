@@ -68,6 +68,8 @@ public class JsonUtility
         // pair<int index, int tick>
         (int, int)[] indexAndTicks = new (int, int)[allRecordJsonObject.Count];
         int nowRecordIndex = 0;
+
+
         foreach (JObject jsonObject in allRecordJsonObject)
         {
             indexAndTicks[nowRecordIndex].Item1 = nowRecordIndex;
@@ -92,6 +94,7 @@ public class JsonUtility
         List<(int, int)> indexAndTicksList = indexAndTicks.ToList<(int, int)>();
         indexAndTicksList.Sort((x, y) => x.Item2.CompareTo(y.Item2));
 
+
         // Write the json obj according to the order
         JObject recordJsonObject = new()
         {
@@ -115,7 +118,9 @@ public class JsonUtility
         JArray allRecordsArray = (JArray)recordJsonObject["records"];
 
         allRecordJsonObject.OrderBy(record => (int)record["tick"]);
+
         return recordJsonObject;
+
 
     }
     /// <summary>

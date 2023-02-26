@@ -188,11 +188,11 @@ public class Record : MonoBehaviour
                 // Player
                 if (this._entityCreator.CreatePlayer(new Player(uniqueId, position, yaw, pitch)) == true)
                 {
-                    Debug.Log($"Create item (id: 0, unique_id: {uniqueId}) successfully!");
+                    Debug.Log($"Create Player (id: 0, unique_id: {uniqueId}) successfully!");
                 }
                 else
                 {
-                    Debug.Log($"Create item (id: 0, unique_id: {uniqueId}) error!");
+                    Debug.Log($"Create Player (id: 0, unique_id: {uniqueId}) error!");
                 }
             }
             else if (entityId == 1)
@@ -225,12 +225,15 @@ public class Record : MonoBehaviour
             int uniqueId = (int)entityJson["unique_id"];
             int? entityTypeId = null;
 
+            //Debug.Log(EntitySource.PlayerDict.ToString());
+
             if (EntitySource.GetItem(uniqueId) != null)
             {
                 entityTypeId = 1;
             }
             else if (EntitySource.GetPlayer(uniqueId) != null)
             {
+
                 entityTypeId = 0;
             }
             if (entityTypeId == null) return;
@@ -276,7 +279,11 @@ public class Record : MonoBehaviour
         // Play
         if (this._recordInfo.RecordSpeed > 0)
         {
+            Debug.Log(this._recordInfo.NowTick);
+            Debug.Log(this._recordInfo.NowRecordNum);
+
             List<JObject> nowEventsJson = new();
+
             // Find all the events at now tick
             for (; this._recordInfo.NowRecordNum < this._recordArray.Count; this._recordInfo.NowRecordNum++)
             {

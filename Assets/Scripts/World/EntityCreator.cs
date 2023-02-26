@@ -136,14 +136,11 @@ public class EntityCreator : MonoBehaviour
         if (player.EntityObject != null)
             return false;
 
-        // Add Interpolate Movement
-        player.EntityObject.AddComponent<InterpolateMovement>();
-
         GameObject playerObject;
         // Miss texture?
 
         // Instantiate 
-        playerObject = (GameObject)Instantiate(ItemPrefabs[player.Id]);
+        playerObject = (GameObject)Instantiate(PlayerPrefabs[player.Id]);
 
         player.EntityObject = playerObject;
         // Put the object in a right position, its parent is 'ItemCreator' object
@@ -154,6 +151,9 @@ public class EntityCreator : MonoBehaviour
         playerObject.AddComponent<InterpolateMovement>();
         // Add player
         EntitySource.AddPlayer(player);
+
+        // Add Interpolate Movement
+        player.EntityObject.AddComponent<InterpolateMovement>();
 
         return true;
 
