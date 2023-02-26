@@ -341,6 +341,7 @@ GameObject:
   m_Component:
   - component: {fileID: 705507995}
   - component: {fileID: 705507994}
+  - component: {fileID: 705507996}
   m_Layer: 0
   m_Name: Directional Light
   m_TagString: Untagged
@@ -393,7 +394,7 @@ Light:
     m_UseCullingMatrixOverride: 0
   m_Cookie: {fileID: 0}
   m_DrawHalo: 0
-  m_Flare: {fileID: 0}
+  m_Flare: {fileID: 12100000, guid: d0c45712c79d35642be3e45d5f8f16da, type: 2}
   m_RenderMode: 0
   m_CullingMask:
     serializedVersion: 2
@@ -425,6 +426,22 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+--- !u!123 &705507996
+LensFlare:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 705507993}
+  m_Enabled: 0
+  m_Flare: {fileID: 12100000, guid: d0c45712c79d35642be3e45d5f8f16da, type: 2}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_Brightness: 1
+  m_FadeSpeed: 3
+  m_IgnoreLayers:
+    serializedVersion: 2
+    m_Bits: 6
+  m_Directional: 0
 --- !u!1 &739289404
 GameObject:
   m_ObjectHideFlags: 0
@@ -572,6 +589,7 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194229}
+  - component: {fileID: 963194230}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -659,6 +677,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   MoveSpeed: 0
   RotateSpeed: 0
+--- !u!124 &963194230
+Behaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
 --- !u!1 &1002413669
 GameObject:
   m_ObjectHideFlags: 0
@@ -1638,7 +1664,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54348e41145e65d40bc8beaa42062bd0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BlockNameArray: []
 --- !u!4 &1857532112
 Transform:
   m_ObjectHideFlags: 0
@@ -1698,7 +1723,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 029b243731f8c714d8814976f96cc8a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BlockNameArray: []
 --- !u!1 &2103790648
 GameObject:
   m_ObjectHideFlags: 0
