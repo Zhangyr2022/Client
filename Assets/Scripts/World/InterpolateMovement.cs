@@ -54,7 +54,5 @@ public class InterpolateMovement : MonoBehaviour
     {
         //if (Vector3.Distance(this.transform.position, this._targetPosition) > LerpMinDistance)
         Interpolation();
-        // Rotation
-        this.transform.Rotate(new Vector3(0, 90 * Time.deltaTime, 0));
     }
 }

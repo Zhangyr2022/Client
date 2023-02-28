@@ -1,6 +1,7 @@
 using JetBrains.Annotations;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Player : Entity
@@ -21,6 +22,12 @@ public class Player : Entity
     public Slot[] Inventory = new Slot[SlotNum];
     public int MainHandSlot;
     public int Id = 0;
+
+    public GameObject Head;
+    public GameObject LeftArms;
+    public GameObject RightArms;
+    public GameObject LeftLegs;
+    public GameObject RightLegs;
     public Player(int uniqueId, Vector3 position, float yaw = 0, float pitch = 0)
     {
         this.UniqueId = uniqueId;
@@ -54,4 +61,29 @@ public class Player : Entity
             }
         }
     }
+    public void UpdateBodyGameObject()
+    {
+        if (this.EntityObject == null) return;
+
+        // Find the head, arms, legs
+        this.Head = this.EntityObject.transform.Find("Head").gameObject;
+        this.LeftArms = this.EntityObject.transform.Find("LeftArms").gameObject;
+        this.RightArms = this.EntityObject.transform.Find("RightArms").gameObject;
+        this.LeftLegs = this.EntityObject.transform.Find("LeftLegs").gameObject;
+        this.RightLegs = this.EntityObject.transform.Find("RightLegs").gameObject;
+    }
+    public void UpdateRotation()
+    {
+        if (this.Head != null)
+        {
+            this.Head.transform.eulerAngles = new Vector3(this.pitch, 0, 0);
+            Debug.Log(this.Head.transform.eulerAngles);
+
+        }
+        if (this.EntityObject != null)
+        {
+            this.EntityObject.transform.eulerAngles = new Vector3(0, this.yaw, 0);
+        }
+    }
+
 }

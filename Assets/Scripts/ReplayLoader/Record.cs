@@ -188,7 +188,7 @@ public class Record : MonoBehaviour
                 // Player
                 if (this._entityCreator.CreatePlayer(new Player(uniqueId, position, yaw, pitch)) == true)
                 {
-                    Debug.Log($"Create Player (id: 0, unique_id: {uniqueId}) successfully!");
+                    Debug.Log($"Create Player (id: 0, unique_id: {uniqueId}, yaw: {yaw}, pitch: {pitch}) successfully!");
                 }
                 else
                 {
@@ -233,7 +233,6 @@ public class Record : MonoBehaviour
             }
             else if (EntitySource.GetPlayer(uniqueId) != null)
             {
-
                 entityTypeId = 0;
             }
             if (entityTypeId == null) return;
@@ -266,7 +265,76 @@ public class Record : MonoBehaviour
             }
         }
     }
+    /// <summary>
+    /// Create an entity
+    /// </summary>
+    /// <param name="eventDataJson"></param>
+    private void AfterEntityRemoveEvent(JObject eventDataJson)
+    {
+        JArray removalList = (JArray)eventDataJson["removal_list"];
 
+        foreach (var entityJson in removalList)
+        {
+            int uniqueId = (int)entityJson["unique_id"];
+            int? entityTypeId = null;
+
+            //Debug.Log(EntitySource.PlayerDict.ToString());
+
+            if (EntitySource.GetItem(uniqueId) != null)
+            {
+                entityTypeId = 1;
+            }
+            else if (EntitySource.GetPlayer(uniqueId) != null)
+            {
+                entityTypeId = 0;
+            }
+            if (entityTypeId == null) return;
+
+            if (entityTypeId == 0)
+            {
+                // Search the player
+                Player player = EntitySource.GetPlayer(uniqueId);
+                this._entityCreator.DeletePlayer(player);
+            }
+            else if (entityTypeId == 1)
+            {
+                // Search the item
+                Item item = EntitySource.GetItem(uniqueId);
+                this._entityCreator.DeleteItem(item);
+            }
+        }
+    }
+    /// <summary>
+    /// Create an entity
+    /// </summary>
+    /// <param name="eventDataJson"></param>
+    private void AfterBlockChange(JObject eventDataJson)
+    {
+        JArray changeList = (JArray)eventDataJson["change_list"];
+
+        foreach (var blockJson in changeList)
+        {
+            int x = (int)blockJson["position"]["x"];
+            int y = (int)blockJson["position"]["y"];
+            int z = (int)blockJson["position"]["z"];
+
+            short newId = (short)blockJson["block_type_id"];
+            Block block = this._blockCreator.UpdateBlock(new Vector3Int(x, y, z), newId, BlockDicts.BlockNameArray[newId], out short? originalTypeId);
+            if (block != null)
+            {
+                // Check visibility of other blocks which are around this block;
+                if ((originalTypeId == 0 && block.Id != 0) || (originalTypeId != 0 && block.Id == 0))
+                {
+                    CheckVisibility.CheckSingleBlockNeighbourVisibility(this._blockCreator, block);
+                }
+                Debug.Log($"Change block ({x},{y},{z}) from {originalTypeId} to {newId}!");
+            }
+            else
+            {
+                Debug.Log($"Cannot get block ({x},{y},{z})!");
+            }
+        }
+    }
     #endregion
 
     #region Record Update
@@ -279,9 +347,6 @@ public class Record : MonoBehaviour
         // Play
         if (this._recordInfo.RecordSpeed > 0)
         {
-            Debug.Log(this._recordInfo.NowTick);
-            Debug.Log(this._recordInfo.NowRecordNum);
-
             List<JObject> nowEventsJson = new();
 
             // Find all the events at now tick
@@ -310,6 +375,12 @@ public class Record : MonoBehaviour
                             break;
                         case "after_entity_position_change":
                             this.AfterEntityPositionChangeEvent(nowEventDataJson);
+                            break;
+                        case "after_entity_remove":
+                            this.AfterEntityRemoveEvent(nowEventDataJson);
+                            break;
+                        case "after_block_change":
+                            this.AfterBlockChange(nowEventDataJson);
                             break;
                         default:
                             break;

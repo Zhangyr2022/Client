@@ -193,7 +193,7 @@ public class RecordLegacy : MonoBehaviour
                     int y = int.Parse(block["y"].ToString());
                     int z = int.Parse(block["z"].ToString());
                     short id = short.Parse(block["id"].ToString());
-                    this._blockCreator.UpdateBlock(new Vector3Int(x, y, z), id, BlockDicts.BlockNameArray[id]);
+                    this._blockCreator.UpdateBlock(new Vector3Int(x, y, z), id, BlockDicts.BlockNameArray[id], out short? originalBlockId);
                 }
             }
 

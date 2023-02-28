@@ -97,10 +97,12 @@ public class EntityCreator : MonoBehaviour
         // Put the object in a right position, its parent is 'ItemCreator' object
         itemObject.transform.parent = this.transform;
         itemObject.transform.position = item.Position;
+        itemObject.transform.Rotate(new Vector3(item.pitch, item.yaw, 0));
         // Scale
         itemObject.transform.localScale /= this._itemScaleRate;
         // Add Interpolate Movement
         itemObject.AddComponent<InterpolateMovement>();
+        itemObject.AddComponent<ItemRotation>();
         // Add item
         EntitySource.AddItem(item);
 
@@ -155,7 +157,28 @@ public class EntityCreator : MonoBehaviour
         // Add Interpolate Movement
         player.EntityObject.AddComponent<InterpolateMovement>();
 
-        return true;
+        // Update Body components: head, arms, legs
+        player.UpdateBodyGameObject();
+        player.UpdateRotation();
 
+        return true;
+    }
+    public bool DeletePlayer(Player player)
+    {
+        // False if the player not exist
+        if (player == null) return false;
+
+        // Check if the player obj exists
+        if (player.EntityObject != null)
+        {
+            Destroy(player.EntityObject);
+        }
+        // Delete the player from dict
+        if (EntitySource.PlayerDict.ContainsKey(player.UniqueId))
+        {
+            EntitySource.PlayerDict.Remove(player.UniqueId);
+        }
+        // Delete the player successfully
+        return true;
     }
 }
