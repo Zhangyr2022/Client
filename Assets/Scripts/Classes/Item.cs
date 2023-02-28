@@ -45,8 +45,10 @@ public class Item : Entity
             }
         }
     }
-    public void UpdateOrientation(int pitch, int yaw)
+    public void UpdateOrientation(float pitch, float yaw)
     {
+        this.pitch = pitch;
+        this.yaw = yaw;
         if (this.EntityObject != null)
         {
             this.EntityObject.transform.rotation = Quaternion.Euler(pitch, yaw, 0);

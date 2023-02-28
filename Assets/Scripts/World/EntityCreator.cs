@@ -159,7 +159,7 @@ public class EntityCreator : MonoBehaviour
 
         // Update Body components: head, arms, legs
         player.UpdateBodyGameObject();
-        player.UpdateRotation();
+        player.UpdateOrientation(player.pitch, player.yaw);
 
         return true;
     }

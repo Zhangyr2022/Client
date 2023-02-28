@@ -96,8 +96,8 @@ public class Level : MonoBehaviour
                 }
                 catch
                 {
-                    Debug.Log(BlockDicts.BlockNameArray);
-                    Debug.Log(section.Blocks[x, y, z].Id);
+                    //Debug.Log(BlockDicts.BlockNameArray);
+                    //Debug.Log(section.Blocks[x, y, z].Id);
                     section.Blocks[x, y, z].Name = BlockDicts.BlockNameArray[0];
                     section.Blocks[x, y, z].Id = 0;
                 }

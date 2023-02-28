@@ -265,6 +265,51 @@ public class Record : MonoBehaviour
             }
         }
     }
+
+    /// <summary>
+    /// Create an entity
+    /// </summary>
+    /// <param name="eventDataJson"></param>
+    private void AfterEntityOrientationChangeEvent(JObject eventDataJson)
+    {
+        JArray changeList = (JArray)eventDataJson["change_list"];
+
+        foreach (JObject entityJson in changeList)
+        {
+            int uniqueId = (int)entityJson["unique_id"];
+            int? entityTypeId = null;
+
+            //Debug.Log(EntitySource.PlayerDict.ToString());
+
+            if (EntitySource.GetItem(uniqueId) != null)
+            {
+                entityTypeId = 1;
+            }
+            else if (EntitySource.GetPlayer(uniqueId) != null)
+            {
+                entityTypeId = 0;
+            }
+            if (entityTypeId == null) return;
+
+            float pitch = (float)entityJson["orientation"]["pitch"];
+            float yaw = (float)entityJson["orientation"]["yaw"];
+
+            if (entityTypeId == 0)
+            {
+                // Search the player
+                Player player = EntitySource.GetPlayer(uniqueId);
+                // Update the orientation
+                player.UpdateOrientation(pitch, yaw);
+            }
+            else if (entityTypeId == 1)
+            {
+                // Search the item
+                Item item = EntitySource.GetItem(uniqueId);
+                // Update the orientation
+                item.UpdateOrientation(pitch, yaw);
+            }
+        }
+    }
     /// <summary>
     /// Create an entity
     /// </summary>
@@ -381,6 +426,9 @@ public class Record : MonoBehaviour
                             break;
                         case "after_block_change":
                             this.AfterBlockChange(nowEventDataJson);
+                            break;
+                        case "after_entity_orientation_change":
+                            this.AfterEntityOrientationChangeEvent(nowEventDataJson);
                             break;
                         default:
                             break;

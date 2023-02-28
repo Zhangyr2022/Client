@@ -72,18 +72,20 @@ public class Player : Entity
         this.LeftLegs = this.EntityObject.transform.Find("LeftLegs").gameObject;
         this.RightLegs = this.EntityObject.transform.Find("RightLegs").gameObject;
     }
-    public void UpdateRotation()
+    public void UpdateOrientation(float pitch, float yaw)
     {
-        if (this.Head != null)
-        {
-            this.Head.transform.eulerAngles = new Vector3(this.pitch, 0, 0);
-            Debug.Log(this.Head.transform.eulerAngles);
+        this.pitch = pitch;
+        this.yaw = yaw;
 
-        }
         if (this.EntityObject != null)
         {
-            this.EntityObject.transform.eulerAngles = new Vector3(0, this.yaw, 0);
+            this.EntityObject.transform.eulerAngles = new Vector3(0, yaw, 0);
         }
+        if (this.Head != null)
+        {
+            this.Head.transform.localEulerAngles = new Vector3(pitch, 0, 0);
+        }
+
     }
 
 }
