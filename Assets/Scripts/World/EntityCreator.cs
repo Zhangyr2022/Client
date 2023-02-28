@@ -109,12 +109,7 @@ public class EntityCreator : MonoBehaviour
         // Create the item successfully
         return true;
     }
-    /// <summary>
-    /// Delete a item
-    /// </summary>
-    /// <param name="item"></param>
-    /// <returns></returns>
-    public bool DeleteItem(Item item)
+    private bool DeleteItemObject(Item item)
     {
         // False if the item not exist
         if (item == null) return false;
@@ -124,13 +119,31 @@ public class EntityCreator : MonoBehaviour
         {
             Destroy(item.EntityObject);
         }
-        // Delete the item from dict
-        if (EntitySource.ItemDict.ContainsKey(item.UniqueId))
-        {
-            EntitySource.ItemDict.Remove(item.UniqueId);
-        }
+
         // Delete the item successfully
         return true;
+    }
+    private bool DeleteItemFromDict(Item item)
+    {
+        // Delete the item from dict
+        if (EntitySource.ItemDict.ContainsKey(item.UniqueId))
+            return false;
+
+        EntitySource.ItemDict.Remove(item.UniqueId);
+        return true;
+    }
+    /// <summary>
+    /// Delete a item
+    /// </summary>
+    /// <param name="item"></param>
+    /// <returns></returns>
+    public bool DeleteItem(Item item)
+    {
+        bool deletObject = DeleteItemObject(item);
+        bool deleteFromDict = DeleteItemFromDict(item);
+        if (deletObject && deleteFromDict)
+            return true;
+        return false;
     }
     public bool CreatePlayer(Player player)
     {
@@ -163,7 +176,7 @@ public class EntityCreator : MonoBehaviour
 
         return true;
     }
-    public bool DeletePlayer(Player player)
+    private bool DeletePlayerObject(Player player)
     {
         // False if the player not exist
         if (player == null) return false;
@@ -173,12 +186,39 @@ public class EntityCreator : MonoBehaviour
         {
             Destroy(player.EntityObject);
         }
-        // Delete the player from dict
-        if (EntitySource.PlayerDict.ContainsKey(player.UniqueId))
-        {
-            EntitySource.PlayerDict.Remove(player.UniqueId);
-        }
+
         // Delete the player successfully
         return true;
+    }
+    private bool DeletePlayerFromDict(Player player)
+    {
+        // Delete the player from dict
+        if (!EntitySource.PlayerDict.ContainsKey(player.UniqueId))
+            return false;
+
+        EntitySource.PlayerDict.Remove(player.UniqueId);
+        return true;
+    }
+    public bool DeletePlayer(Player player)
+    {
+        bool deletObject = DeletePlayerObject(player);
+        bool deleteFromDict = DeletePlayerFromDict(player);
+        if (deletObject && deleteFromDict)
+            return true;
+        return false;
+    }
+    public void DeleteAllEntities()
+    {
+        foreach (Player player in EntitySource.PlayerDict.Values)
+        {
+            DeletePlayerObject(player);
+        }
+        EntitySource.PlayerDict.Clear();
+
+        foreach (Item item in EntitySource.ItemDict.Values)
+        {
+            DeleteItemObject(item);
+        }
+        EntitySource.ItemDict.Clear();
     }
 }

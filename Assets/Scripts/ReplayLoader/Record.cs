@@ -46,6 +46,13 @@ public class Record : MonoBehaviour
         /// If NowDeltaTime is larger than NowframeTime, then play the next frame
         /// </summary>
         public float NowDeltaTime = 0;
+
+        public void Reset()
+        {
+            this.RecordSpeed = 1f;
+            this.NowTick = 0;
+            this.NowRecordNum = 0;
+        }
     }
     private BlockCreator _blockCreator;
     private EntityCreator _entityCreator;
@@ -63,6 +70,11 @@ public class Record : MonoBehaviour
     /// </summary>
     private Sprite _stopButtonSprite;
     private Sprite _continueButtonSprite;
+
+    /// <summary>
+    /// Replay button
+    /// </summary>
+    private Button _replayButton;
     /// <summary>
     /// The slider which can change the record playing rate
     /// </summary>
@@ -99,7 +111,6 @@ public class Record : MonoBehaviour
         // Get stop button sprites
         this._stopButtonSprite = Resources.Load<Sprite>("GUI/Button/StopButton");
         this._continueButtonSprite = Resources.Load<Sprite>("GUI/Button/ContinueButton");
-        Debug.Log(this._stopButtonSprite);
         // Pause at beginning
         this._stopButton.GetComponent<Image>().sprite = _continueButtonSprite;
         // Add listener to stop button
@@ -115,6 +126,14 @@ public class Record : MonoBehaviour
                 this._stopButton.GetComponent<Image>().sprite = this._stopButtonSprite;
                 this._recordInfo.NowPlayState = PlayState.Play;
             }
+        });
+
+        // Get Replay button
+        this._replayButton = GameObject.Find("Canvas/ReplayButton").GetComponent<Button>();
+        this._replayButton.onClick.AddListener(() =>
+        {
+            this._recordInfo.Reset();
+            this._entityCreator.DeleteAllEntities();
         });
 
 
