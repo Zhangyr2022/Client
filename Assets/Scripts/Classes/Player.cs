@@ -28,6 +28,8 @@ public class Player : Entity
     public GameObject RightArms;
     public GameObject LeftLegs;
     public GameObject RightLegs;
+
+    public PlayerAnimations PlayerAnimations;
     public Player(int uniqueId, Vector3 position, float yaw = 0, float pitch = 0)
     {
         this.UniqueId = uniqueId;
@@ -44,6 +46,7 @@ public class Player : Entity
     }
     public void UpdatePosition(Vector3 newPosition)
     {
+        PlayerAnimations.WalkAnimationPlayer(this.Position, newPosition);
         // To be changed
         this.Position = newPosition;
         if (this.EntityObject != null)
@@ -85,7 +88,6 @@ public class Player : Entity
         {
             this.Head.transform.localEulerAngles = new Vector3(pitch, 0, 0);
         }
-
     }
 
 }

@@ -54,4 +54,17 @@ public class EntitySource
             return null;
         }
     }
+
+    public static Entity GetEntity(int uniqueId, out int? entityTypeId)
+    {
+        entityTypeId = null;
+        Entity entity = EntitySource.GetItem(uniqueId);
+        if (entity != null)
+            entityTypeId = 1;
+        entity = EntitySource.GetPlayer(uniqueId);
+        if (entity != null)
+            entityTypeId = 0;
+
+        return entity;
+    }
 }

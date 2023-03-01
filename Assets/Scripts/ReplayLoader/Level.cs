@@ -60,7 +60,6 @@ public class Level : MonoBehaviour
         JObject jsonObject = (JsonUtility.UnzipLevel(this._levelFile.File));
         // Deal with Sections: array
         JArray sections = (JArray)jsonObject["sections"];
-        Debug.Log(sections.Count);
 
         for (int i = 0; i < sections.Count; i++)
         {

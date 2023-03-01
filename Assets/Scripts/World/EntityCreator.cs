@@ -73,6 +73,48 @@ public class EntityCreator : MonoBehaviour
         }
     }
     /// <summary>
+    /// Open its renderer
+    /// </summary>
+    /// <param name="item"></param>
+    /// <returns></returns>
+    public bool SpawnEntity(Entity entity)
+    {
+        entity.EntityObject.TryGetComponent(out Renderer renderer);
+        if (renderer == null)
+            return false;
+
+        renderer.enabled = true;
+        return true;
+    }
+    /// <summary>
+    /// Close its renderer
+    /// </summary>
+    /// <param name="item"></param>
+    /// <returns></returns>
+    public bool DespawnEntity(Entity entity, int entityTypeId)
+    {
+        entity.EntityObject.TryGetComponent(out Renderer renderer);
+        if (renderer == null)
+            return false;
+
+        if (entityTypeId == 0)
+        {
+            ((Player)entity).PlayerAnimations.DeadAnimationPlayer();
+
+            // Not rendered when the dead animations end
+            void SetNotRendered()
+            {
+                renderer.enabled = false;
+            }
+            Invoke(nameof(SetNotRendered), PlayerAnimations.DeadTime);
+        }
+        else if (entityTypeId == 1)
+        {
+            renderer.enabled = false;
+        }
+        return true;
+    }
+    /// <summary>
     /// Create a item
     /// </summary>
     /// <param name="item"></param>
@@ -168,7 +210,9 @@ public class EntityCreator : MonoBehaviour
         EntitySource.AddPlayer(player);
 
         // Add Interpolate Movement
-        player.EntityObject.AddComponent<InterpolateMovement>();
+        player.InterpolateMove = player.EntityObject.AddComponent<InterpolateMovement>();
+        // Add Animation players
+        player.PlayerAnimations = player.EntityObject.AddComponent<PlayerAnimations>();
 
         // Update Body components: head, arms, legs
         player.UpdateBodyGameObject();

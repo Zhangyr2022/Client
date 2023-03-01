@@ -13,7 +13,8 @@ public class Record : MonoBehaviour
         Prepare,
         Play,
         Pause,
-        End
+        End,
+        Jump
     }
     public class RecordInfo
     {
@@ -47,11 +48,20 @@ public class Record : MonoBehaviour
         /// </summary>
         public float NowDeltaTime = 0;
 
+        /// <summary>
+        /// The target tick to jump
+        /// </summary>
+        public int JumpTargetTick = int.MaxValue;
+        /// <summary>
+        /// Current max tick
+        /// </summary>
+        public int MaxTick;
         public void Reset()
         {
             this.RecordSpeed = 1f;
             this.NowTick = 0;
             this.NowRecordNum = 0;
+            JumpTargetTick = int.MaxValue;
         }
     }
     private BlockCreator _blockCreator;
@@ -82,6 +92,15 @@ public class Record : MonoBehaviour
     private TMP_Text _recordSpeedText;
     private float _recordSpeedSliderMinValue;
     private float _recordSpeedSliderMaxValue;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    private Slider _processSlider;
+
+    private TMP_Text _jumpTargetTickText; // The target tick text in Unity 
+    private TMP_Text _maxTickText; // The text of max tick in Unity
+
 
     public RecordInfo RecordInformation
     {
@@ -147,7 +166,7 @@ public class Record : MonoBehaviour
         // Linear: 0~1
         float speedRate = (1 - RecordInfo.MinSpeed) / (RecordInfo.MaxSpeed - RecordInfo.MinSpeed);
         this._recordSpeedSlider.value = this._recordSpeedSliderMinValue + (this._recordSpeedSliderMaxValue - this._recordSpeedSliderMinValue) * speedRate;
-        // Add listenr
+        // Add listener
         this._recordSpeedSlider.onValueChanged.AddListener((float value) =>
         {
             // Linear
@@ -166,6 +185,34 @@ public class Record : MonoBehaviour
             return;
         }
         this._recordArray = LoadRecordData();
+        this._recordInfo.MaxTick = (int)this._recordArray.Last["tick"];
+
+        // Process slider
+        this._processSlider = GameObject.Find("Canvas/ProcessSlider").GetComponent<Slider>();
+        this._processSlider.value = 0;
+        this._jumpTargetTickText = GameObject.Find("Canvas/ProcessSlider/Handle Slide Area/Handle/Value").GetComponent<TMP_Text>();
+        this._maxTickText = GameObject.Find("Canvas/ProcessSlider/Max").GetComponent<TMP_Text>();
+        this._recordInfo.MaxTick = this._recordArray.Count;
+        this._maxTickText.text = $"{this._recordInfo.MaxTick}";
+        // Add listener
+        this._processSlider.onValueChanged.AddListener((float value) =>
+        {
+            int nowTargetTick = (int)(value * this._recordInfo.MaxTick);
+            if (PlayState.Play == this._recordInfo.NowPlayState && Mathf.Abs(this._recordInfo.NowTick - nowTargetTick) > 1)
+            {
+                // Jump //
+                // Reset the scene if the jump tick is smaller than now tick
+                if (this._recordInfo.NowTick > nowTargetTick)
+                {
+                    this._recordInfo.Reset();
+                    this._entityCreator.DeleteAllEntities();
+                }
+                // Change current state
+                this._recordInfo.NowPlayState = PlayState.Jump;
+                // Change target tick
+                this._recordInfo.JumpTargetTick = nowTargetTick;
+            }
+        });
     }
     private JArray LoadRecordData()
     {
@@ -242,45 +289,29 @@ public class Record : MonoBehaviour
         foreach (JObject entityJson in changeList)
         {
             int uniqueId = (int)entityJson["unique_id"];
-            int? entityTypeId = null;
 
-            //Debug.Log(EntitySource.PlayerDict.ToString());
-
-            if (EntitySource.GetItem(uniqueId) != null)
-            {
-                entityTypeId = 1;
-            }
-            else if (EntitySource.GetPlayer(uniqueId) != null)
-            {
-                entityTypeId = 0;
-            }
-            if (entityTypeId == null) return;
-
+            Entity entity = EntitySource.GetEntity(uniqueId, out int? entityTypeId);
+            if (entityTypeId == null) continue;
 
             if (entityTypeId == 0)
             {
-                // Search the player
-                Player player = EntitySource.GetPlayer(uniqueId);
                 // Update the position
                 Vector3 newPosition = new Vector3(
                     (float)entityJson["position"]["x"],
                     (float)entityJson["position"]["y"],
                     (float)entityJson["position"]["z"]
                 );
-                player.UpdatePosition(newPosition);
+                ((Player)entity).UpdatePosition(newPosition);
             }
             else if (entityTypeId == 1)
             {
-                // Search the item
-                Item item = EntitySource.GetItem(uniqueId);
                 // Update the position
                 Vector3 newPosition = new Vector3(
                     (float)entityJson["position"]["x"],
                     (float)entityJson["position"]["y"],
                     (float)entityJson["position"]["z"]
                 );
-                item.UpdatePosition(newPosition);
-
+                ((Item)entity).UpdatePosition(newPosition);
             }
         }
     }
@@ -296,36 +327,22 @@ public class Record : MonoBehaviour
         foreach (JObject entityJson in changeList)
         {
             int uniqueId = (int)entityJson["unique_id"];
-            int? entityTypeId = null;
 
-            //Debug.Log(EntitySource.PlayerDict.ToString());
-
-            if (EntitySource.GetItem(uniqueId) != null)
-            {
-                entityTypeId = 1;
-            }
-            else if (EntitySource.GetPlayer(uniqueId) != null)
-            {
-                entityTypeId = 0;
-            }
-            if (entityTypeId == null) return;
+            Entity entity = EntitySource.GetEntity(uniqueId, out int? entityTypeId);
+            if (entityTypeId == null) continue;
 
             float pitch = (float)entityJson["orientation"]["pitch"];
             float yaw = (float)entityJson["orientation"]["yaw"];
 
             if (entityTypeId == 0)
             {
-                // Search the player
-                Player player = EntitySource.GetPlayer(uniqueId);
                 // Update the orientation
-                player.UpdateOrientation(pitch, yaw);
+                ((Player)entity).UpdateOrientation(pitch, yaw);
             }
             else if (entityTypeId == 1)
             {
-                // Search the item
-                Item item = EntitySource.GetItem(uniqueId);
                 // Update the orientation
-                item.UpdateOrientation(pitch, yaw);
+                ((Item)entity).UpdateOrientation(pitch, yaw);
             }
         }
     }
@@ -340,31 +357,17 @@ public class Record : MonoBehaviour
         foreach (var entityJson in removalList)
         {
             int uniqueId = (int)entityJson["unique_id"];
-            int? entityTypeId = null;
 
-            //Debug.Log(EntitySource.PlayerDict.ToString());
-
-            if (EntitySource.GetItem(uniqueId) != null)
-            {
-                entityTypeId = 1;
-            }
-            else if (EntitySource.GetPlayer(uniqueId) != null)
-            {
-                entityTypeId = 0;
-            }
-            if (entityTypeId == null) return;
+            Entity entity = EntitySource.GetEntity(uniqueId, out int? entityTypeId);
+            if (entityTypeId == null) continue;
 
             if (entityTypeId == 0)
             {
-                // Search the player
-                Player player = EntitySource.GetPlayer(uniqueId);
-                this._entityCreator.DeletePlayer(player);
+                this._entityCreator.DeletePlayer((Player)entity);
             }
             else if (entityTypeId == 1)
             {
-                // Search the item
-                Item item = EntitySource.GetItem(uniqueId);
-                this._entityCreator.DeleteItem(item);
+                this._entityCreator.DeleteItem((Item)entity);
             }
         }
     }
@@ -397,6 +400,41 @@ public class Record : MonoBehaviour
             {
                 Debug.Log($"Cannot get block ({x},{y},{z})!");
             }
+        }
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="eventDataJson"></param>
+    private void AfterEntitySpawn(JObject eventDataJson)
+    {
+        JArray spawnList = (JArray)eventDataJson["change_list"];
+        foreach (JToken entityJson in spawnList)
+        {
+            int uniqueId = (int)entityJson["unique_id"];
+
+            Entity entity = EntitySource.GetEntity(uniqueId, out int? entityTypeId);
+            if (entityTypeId == null) continue;
+
+            this._entityCreator.SpawnEntity(entity);
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="eventDataJson"></param>
+    private void AfterEntityDespawn(JObject eventDataJson)
+    {
+        JArray spawnList = (JArray)eventDataJson["change_list"];
+        foreach (JToken entityJson in spawnList)
+        {
+            int uniqueId = (int)entityJson["unique_id"];
+
+            Entity entity = EntitySource.GetEntity(uniqueId, out int? entityTypeId);
+            if (entityTypeId == null) continue;
+
+            this._entityCreator.DespawnEntity(entity, (int)entityTypeId);
         }
     }
     #endregion
@@ -449,6 +487,12 @@ public class Record : MonoBehaviour
                         case "after_entity_orientation_change":
                             this.AfterEntityOrientationChangeEvent(nowEventDataJson);
                             break;
+                        case "after_entity_spawn":
+                            this.AfterEntitySpawn(nowEventDataJson);
+                            break;
+                        case "after_entity_despawn":
+                            this.AfterEntityDespawn(nowEventDataJson);
+                            break;
                         default:
                             break;
                     }
@@ -456,6 +500,13 @@ public class Record : MonoBehaviour
             }
             // Ticks
             this._recordInfo.NowTick++;
+            this._jumpTargetTickText.text = $"Tick\n{this._recordInfo.NowTick}"; // Update process slider text
+            // move the process slider
+            this._processSlider.value = (this._recordInfo.NowTick / (float)this._recordInfo.MaxTick);
+            // Jump end if now tick reaches JumpTargetTick
+            if (this._recordInfo.NowTick >= this._recordInfo.JumpTargetTick &&
+                this._recordInfo.NowPlayState == PlayState.Jump)
+            { this._recordInfo.NowPlayState = PlayState.Play; }
         }
         // Upend
         else
@@ -466,18 +517,15 @@ public class Record : MonoBehaviour
     }
     private void Update()
     {
-        if (this._recordInfo.NowPlayState == PlayState.Play &&
-            this._recordInfo.NowRecordNum < this._recordArray.Count)
+        if ((this._recordInfo.NowPlayState == PlayState.Play && this._recordInfo.NowRecordNum < this._recordArray.Count) ||
+            this._recordInfo.NowPlayState == PlayState.Jump)
         {
-            if (this._recordInfo.NowDeltaTime > this._recordInfo.NowframeTime)
+            if (this._recordInfo.NowDeltaTime > this._recordInfo.NowframeTime || this._recordInfo.NowPlayState == PlayState.Jump)
             {
                 UpdateTick();
                 this._recordInfo.NowDeltaTime = 0;
             }
-            else
-            {
-                this._recordInfo.NowDeltaTime += Time.deltaTime;
-            }
+            this._recordInfo.NowDeltaTime += Time.deltaTime;
         }
     }
 }
