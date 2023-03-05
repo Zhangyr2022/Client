@@ -27,7 +27,7 @@ public class Item : Entity
     /// Change the position of this item
     /// </summary>
     /// <param name="newPosition"></param>
-    public void UpdatePosition(Vector3 newPosition)
+    public void UpdatePosition(Vector3 newPosition, float recordSpeed)
     {
         this.Position = newPosition;
         if (this.EntityObject != null)
@@ -35,7 +35,7 @@ public class Item : Entity
             if (this.InterpolateMove != null)
             {
                 // Interpolation movement
-                this.InterpolateMove.SetTargetPosition(newPosition);
+                this.InterpolateMove.SetTargetPosition(newPosition, recordSpeed);
             }
             else
             {

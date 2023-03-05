@@ -97,8 +97,8 @@ public class Level : MonoBehaviour
                 {
                     //Debug.Log(BlockDicts.BlockNameArray);
                     //Debug.Log(section.Blocks[x, y, z].Id);
-                    section.Blocks[x, y, z].Name = BlockDicts.BlockNameArray[0];
-                    section.Blocks[x, y, z].Id = 0;
+                    section.Blocks[x, y, z].Name = "";
+                    section.Blocks[x, y, z].Id = -1;
                 }
                 // Compute absolute position
                 section.Blocks[x, y, z].Position = new Vector3Int(sectionX + x, sectionY + y, sectionZ + z);

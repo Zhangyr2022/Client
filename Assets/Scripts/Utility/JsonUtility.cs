@@ -17,9 +17,12 @@ public class JsonUtility
     public static JObject UnzipLevel(string path)
     {
         ZipArchive mcLevelDataZipFile = ZipFile.OpenRead(path);
-        Stream mcLevelDataEntryStream = mcLevelDataZipFile.GetEntry("level.dat.old").Open() ??
-            (mcLevelDataZipFile.GetEntry("level.dat").Open() ??
-            throw new Exception("mcLevel data not found in zip archive."));
+        //Stream mcLevelDataEntryStream = mcLevelDataZipFile.GetEntry("level.dat.old").Open() ??
+        //    (mcLevelDataZipFile.GetEntry("level.dat").Open() ??
+        //    throw new Exception("mcLevel data not found in zip archive."));
+        Stream mcLevelDataEntryStream = (mcLevelDataZipFile.GetEntry("level.dat").Open() ??
+        throw new Exception("mcLevel data not found in zip archive."));
+
 
         ZipArchive levelDataZipFile = new ZipArchive(mcLevelDataEntryStream);
         Stream levelDataEntryStream = levelDataZipFile.GetEntry("level_data.json").Open() ??

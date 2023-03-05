@@ -60,7 +60,11 @@ public class EntitySource
         entityTypeId = null;
         Entity entity = EntitySource.GetItem(uniqueId);
         if (entity != null)
+        {
             entityTypeId = 1;
+            return entity;
+        }
+
         entity = EntitySource.GetPlayer(uniqueId);
         if (entity != null)
             entityTypeId = 0;

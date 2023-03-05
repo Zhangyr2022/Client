@@ -17,6 +17,7 @@ public class Player : Entity
         UseEnd
     }
     public const int SlotNum = 36;
+    public const float PlayerHurtChangeColorTime = 0.5f;
     public float Health;
     public int Experiments;
     public Slot[] Inventory = new Slot[SlotNum];
@@ -30,6 +31,7 @@ public class Player : Entity
     public GameObject RightLegs;
 
     public PlayerAnimations PlayerAnimations;
+
     public Player(int uniqueId, Vector3 position, float yaw = 0, float pitch = 0)
     {
         this.UniqueId = uniqueId;
@@ -44,7 +46,7 @@ public class Player : Entity
         this.yaw = 0;
         this.pitch = 0;
     }
-    public void UpdatePosition(Vector3 newPosition)
+    public void UpdatePosition(Vector3 newPosition, float recordSpeed)
     {
         PlayerAnimations.WalkAnimationPlayer(this.Position, newPosition);
         // To be changed
@@ -54,7 +56,7 @@ public class Player : Entity
             if (this.InterpolateMove != null)
             {
                 // Interpolation movement
-                this.InterpolateMove.SetTargetPosition(newPosition);
+                this.InterpolateMove.SetTargetPosition(newPosition, recordSpeed);
             }
             else
             {
@@ -89,5 +91,22 @@ public class Player : Entity
             this.Head.transform.localEulerAngles = new Vector3(pitch, 0, 0);
         }
     }
-
+    private void SetEntityMaterialRed()
+    {
+        foreach (var entityRenderer in this.EntityRenderers)
+            if (entityRenderer != null)
+                entityRenderer.material.color = Color.red;
+    }
+    private void SetMaterialWhite()
+    {
+        foreach (var entityRenderer in this.EntityRenderers)
+            if (entityRenderer != null)
+                entityRenderer.material.color = Color.white;
+    }
+    public IEnumerator PlayerHurt(float recordSpeed)
+    {
+        this.SetEntityMaterialRed();
+        yield return new WaitForSeconds(PlayerHurtChangeColorTime / recordSpeed);
+        this.SetMaterialWhite();
+    }
 }

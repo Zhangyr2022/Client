@@ -5,6 +5,8 @@ using UnityEngine.UI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TMPro;
+using Unity.VisualScripting.Antlr3.Runtime.Collections;
+using System.Linq;
 
 public class Record : MonoBehaviour
 {
@@ -58,7 +60,7 @@ public class Record : MonoBehaviour
         public int MaxTick;
         public void Reset()
         {
-            this.RecordSpeed = 1f;
+            //this.RecordSpeed = 1f;
             this.NowTick = 0;
             this.NowRecordNum = 0;
             JumpTargetTick = int.MaxValue;
@@ -70,6 +72,7 @@ public class Record : MonoBehaviour
     private Upload _upload = new() { };
     private Upload.OpenFileName _recordFile = new() { };
     private JArray _recordArray;
+    private Dictionary<string, JArray> _recordDict = new();
 
     /// <summary>
     /// Stop / Continue button
@@ -101,6 +104,14 @@ public class Record : MonoBehaviour
     private TMP_Text _jumpTargetTickText; // The target tick text in Unity 
     private TMP_Text _maxTickText; // The text of max tick in Unity
 
+
+    /// <summary>
+    /// Shade on or off
+    /// </summary>
+    private Button _shadeButton;
+    private TMP_Text _shadeButtonText;
+    private Light _light;
+    private bool _isShadeOn;
 
     public RecordInfo RecordInformation
     {
@@ -148,12 +159,12 @@ public class Record : MonoBehaviour
         });
 
         // Get Replay button
-        this._replayButton = GameObject.Find("Canvas/ReplayButton").GetComponent<Button>();
-        this._replayButton.onClick.AddListener(() =>
-        {
-            this._recordInfo.Reset();
-            this._entityCreator.DeleteAllEntities();
-        });
+        //this._replayButton = GameObject.Find("Canvas/ReplayButton").GetComponent<Button>();
+        //this._replayButton.onClick.AddListener(() =>
+        //{
+        //    this._recordInfo.Reset();
+        //    this._entityCreator.DeleteAllEntities();
+        //});
 
 
         // Record playing rate slider
@@ -175,6 +186,10 @@ public class Record : MonoBehaviour
             this._recordInfo.RecordSpeed = RecordInfo.MinSpeed + (RecordInfo.MaxSpeed - RecordInfo.MinSpeed) * sliderRate;
             // Update speed text
             _recordSpeedText.text = $"Speed: {Mathf.Round(this._recordInfo.RecordSpeed * 100) / 100f:F2}";
+            foreach (Player player in EntitySource.PlayerDict.Values)
+            {
+                player.PlayerAnimations.SetAnimatorSpeed(this._recordInfo.RecordSpeed);
+            }
         });
 
 
@@ -186,18 +201,31 @@ public class Record : MonoBehaviour
         }
         this._recordArray = LoadRecordData();
         this._recordInfo.MaxTick = (int)this._recordArray.Last["tick"];
+        // Generate record Dict according to record array
+        foreach (JToken eventJson in this._recordArray)
+        {
+            string identifier = eventJson["identifier"].ToString();
+            if (this._recordDict.ContainsKey(identifier))
+            {
+                this._recordDict[identifier].Add(eventJson);
+            }
+            else
+            {
+                this._recordDict.Add(identifier, new JArray(eventJson));
+            }
+        }
 
         // Process slider
         this._processSlider = GameObject.Find("Canvas/ProcessSlider").GetComponent<Slider>();
-        this._processSlider.value = 0;
+        this._processSlider.value = 1;
         this._jumpTargetTickText = GameObject.Find("Canvas/ProcessSlider/Handle Slide Area/Handle/Value").GetComponent<TMP_Text>();
         this._maxTickText = GameObject.Find("Canvas/ProcessSlider/Max").GetComponent<TMP_Text>();
-        this._recordInfo.MaxTick = this._recordArray.Count;
+        this._recordInfo.MaxTick = (int)(this._recordArray.Last["tick"]);
         this._maxTickText.text = $"{this._recordInfo.MaxTick}";
         // Add listener
         this._processSlider.onValueChanged.AddListener((float value) =>
         {
-            int nowTargetTick = (int)(value * this._recordInfo.MaxTick);
+            int nowTargetTick = (int)(value * this._recordInfo.MaxTick) + 1; // Add 1 owing to interpolation
             if (PlayState.Play == this._recordInfo.NowPlayState && Mathf.Abs(this._recordInfo.NowTick - nowTargetTick) > 1)
             {
                 // Jump //
@@ -206,11 +234,33 @@ public class Record : MonoBehaviour
                 {
                     this._recordInfo.Reset();
                     this._entityCreator.DeleteAllEntities();
+                    // Reset All blocks;
+                    // foreach (JToken blockChangeEventJson in this._recordDict["after_block_change"])
                 }
                 // Change current state
                 this._recordInfo.NowPlayState = PlayState.Jump;
                 // Change target tick
                 this._recordInfo.JumpTargetTick = nowTargetTick;
+            }
+        });
+
+        // Shade
+        _light = GameObject.Find("Directional Light").GetComponent<Light>();
+        _shadeButton = GameObject.Find("Canvas/Shade").GetComponent<Button>();
+        _shadeButtonText = GameObject.Find("Canvas/Shade/ShadeText").GetComponent<TMP_Text>();
+        _isShadeOn = true;
+        _shadeButton.onClick.AddListener(() =>
+        {
+            this._isShadeOn = !this._isShadeOn;
+            if (this._isShadeOn == true)
+            {
+                this._light.shadows = LightShadows.Soft;
+                this._shadeButtonText.text = "Shade on";
+            }
+            else
+            {
+                this._light.shadows = LightShadows.None;
+                this._shadeButtonText.text = "Shade off";
             }
         });
     }
@@ -301,7 +351,7 @@ public class Record : MonoBehaviour
                     (float)entityJson["position"]["y"],
                     (float)entityJson["position"]["z"]
                 );
-                ((Player)entity).UpdatePosition(newPosition);
+                ((Player)entity).UpdatePosition(newPosition, this._recordInfo.RecordSpeed);
             }
             else if (entityTypeId == 1)
             {
@@ -311,7 +361,7 @@ public class Record : MonoBehaviour
                     (float)entityJson["position"]["y"],
                     (float)entityJson["position"]["z"]
                 );
-                ((Item)entity).UpdatePosition(newPosition);
+                ((Item)entity).UpdatePosition(newPosition, this._recordInfo.RecordSpeed);
             }
         }
     }
@@ -394,11 +444,11 @@ public class Record : MonoBehaviour
                 {
                     CheckVisibility.CheckSingleBlockNeighbourVisibility(this._blockCreator, block);
                 }
-                Debug.Log($"Change block ({x},{y},{z}) from {originalTypeId} to {newId}!");
+                //Debug.Log($"Change block ({x},{y},{z}) from {originalTypeId} to {newId}!");
             }
             else
             {
-                Debug.Log($"Cannot get block ({x},{y},{z})!");
+                //Debug.Log($"Cannot get block ({x},{y},{z})!");
             }
         }
     }
@@ -426,7 +476,7 @@ public class Record : MonoBehaviour
     /// <param name="eventDataJson"></param>
     private void AfterEntityDespawn(JObject eventDataJson)
     {
-        JArray spawnList = (JArray)eventDataJson["change_list"];
+        JArray spawnList = (JArray)eventDataJson["despawn_list"];
         foreach (JToken entityJson in spawnList)
         {
             int uniqueId = (int)entityJson["unique_id"];
@@ -434,9 +484,60 @@ public class Record : MonoBehaviour
             Entity entity = EntitySource.GetEntity(uniqueId, out int? entityTypeId);
             if (entityTypeId == null) continue;
 
-            this._entityCreator.DespawnEntity(entity, (int)entityTypeId);
+            StartCoroutine(this._entityCreator.DespawnEntity(entity, (int)entityTypeId));
         }
     }
+
+    private void AfterEntityAttack(JObject eventDataJson)
+    {
+        JArray attackList = (JArray)eventDataJson["attack_list"];
+        foreach (JToken entityJson in attackList)
+        {
+            int uniqueId = (int)entityJson["attacker_unique_id"];
+
+            Entity entity = EntitySource.GetEntity(uniqueId, out int? entityTypeId);
+            if (entityTypeId == null) continue;
+
+            if (entityTypeId == 0)
+            {
+                string attackKind = entityJson["attack_kind"].ToString();
+                switch (attackKind)
+                {
+                    case "click":
+                        ((Player)entity).PlayerAnimations.AttackAnimationPlayer(isContinuous: false, isAttackStart: true);
+                        break;
+                    case "hold_start":
+                        ((Player)entity).PlayerAnimations.AttackAnimationPlayer(isContinuous: true, isAttackStart: true);
+                        break;
+                    case "hold_end":
+                        ((Player)entity).PlayerAnimations.AttackAnimationPlayer(isContinuous: true, isAttackStart: false);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+    private void AfterEntityHurt(JObject eventDataJson)
+    {
+        JArray hurtList = (JArray)eventDataJson["hurt_list"];
+        foreach (JToken entityJson in hurtList)
+        {
+            int uniqueId = (int)entityJson["victim_unique_id"];
+
+            Entity entity = EntitySource.GetEntity(uniqueId, out int? entityTypeId);
+            if (entityTypeId == null) continue;
+
+            if (entityTypeId == 0)
+            {
+                int damage = (int)entityJson["damage"];
+
+                StartCoroutine(((Player)entity).PlayerHurt(this._recordInfo.RecordSpeed));
+            }
+        }
+    }
+
+
     #endregion
 
     #region Record Update
@@ -493,6 +594,12 @@ public class Record : MonoBehaviour
                         case "after_entity_despawn":
                             this.AfterEntityDespawn(nowEventDataJson);
                             break;
+                        case "after_entity_attack":
+                            this.AfterEntityAttack(nowEventDataJson);
+                            break;
+                        case "after_entity_hurt":
+                            this.AfterEntityHurt(nowEventDataJson);
+                            break;
                         default:
                             break;
                     }
@@ -501,7 +608,7 @@ public class Record : MonoBehaviour
             // Ticks
             this._recordInfo.NowTick++;
             this._jumpTargetTickText.text = $"Tick\n{this._recordInfo.NowTick}"; // Update process slider text
-            // move the process slider
+                                                                                 // move the process slider
             this._processSlider.value = (this._recordInfo.NowTick / (float)this._recordInfo.MaxTick);
             // Jump end if now tick reaches JumpTargetTick
             if (this._recordInfo.NowTick >= this._recordInfo.JumpTargetTick &&

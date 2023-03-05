@@ -251,7 +251,7 @@ public class RecordLegacy : MonoBehaviour
                                 position = new Vector3(itemX, itemY, itemZ);
                                 if (item != null)
                                 {
-                                    item.UpdatePosition(position);
+                                    item.UpdatePosition(position, this._recordInfo.RecordSpeed);
                                 }
                             }
                         }

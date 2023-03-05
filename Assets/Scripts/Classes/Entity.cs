@@ -18,4 +18,5 @@ public class Entity
     public float yaw;
     public float pitch;
     public InterpolateMovement InterpolateMove;
+    public Renderer[] EntityRenderers;
 }

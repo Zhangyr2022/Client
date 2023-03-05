@@ -8,7 +8,7 @@ public class EntityCreator : MonoBehaviour
     /// <summary>
     /// The item is smaller than the block, so (item scale) * _itemScaleRate = (block scale)
     /// </summary>
-    private float _itemScaleRate = 2f;
+    private float _itemScaleRate = 4f;
     /// <summary>
     /// The continuous item id is defined by ourselves, rather than original edition of MC
     /// Owing to the item also contains the block, we list the block at first
@@ -32,7 +32,11 @@ public class EntityCreator : MonoBehaviour
         "StoneShovel",
         "StonePickaxe",
         "StoneAxe",
-        "Stick"
+        "Stick",
+        "Coal",
+        "Iron",
+        "Golden",
+        "Diamond"
     };
     public GameObject[] ItemPrefabs;
 
@@ -91,28 +95,33 @@ public class EntityCreator : MonoBehaviour
     /// </summary>
     /// <param name="item"></param>
     /// <returns></returns>
-    public bool DespawnEntity(Entity entity, int entityTypeId)
+    //private void SetNotRendered()
+    //{
+    //    GetComponent<Renderer>().enabled = false;
+    //}
+    public IEnumerator DespawnEntity(Entity entity, int entityTypeId)
     {
-        entity.EntityObject.TryGetComponent(out Renderer renderer);
-        if (renderer == null)
-            return false;
 
-        if (entityTypeId == 0)
-        {
-            ((Player)entity).PlayerAnimations.DeadAnimationPlayer();
-
-            // Not rendered when the dead animations end
-            void SetNotRendered()
+        if (entity.EntityRenderers != null)
+            if (entityTypeId == 0)
             {
-                renderer.enabled = false;
+                StartCoroutine(((Player)entity).PlayerAnimations.DeadAnimationPlayer());
+
+                // Not rendered when the dead animations end
+                yield return new WaitForSeconds(PlayerAnimations.DeadTime);
+                //Invoke(nameof(SetNotRendered), PlayerAnimations.DeadTime);
+                foreach (var entityRenderer in entity.EntityRenderers)
+                {
+                    entityRenderer.enabled = false;
+                }
             }
-            Invoke(nameof(SetNotRendered), PlayerAnimations.DeadTime);
-        }
-        else if (entityTypeId == 1)
-        {
-            renderer.enabled = false;
-        }
-        return true;
+            else if (entityTypeId == 1)
+            {
+                foreach (var entityRenderer in entity.EntityRenderers)
+                {
+                    entityRenderer.enabled = false;
+                }
+            }
     }
     /// <summary>
     /// Create a item
@@ -147,7 +156,8 @@ public class EntityCreator : MonoBehaviour
         itemObject.AddComponent<ItemRotation>();
         // Add item
         EntitySource.AddItem(item);
-
+        // Get mesh renderer
+        //item.EntityMeshRenderer = item.EntityObject.GetComponent<SkinnedMeshRenderer>();
         // Create the item successfully
         return true;
     }
@@ -218,6 +228,8 @@ public class EntityCreator : MonoBehaviour
         player.UpdateBodyGameObject();
         player.UpdateOrientation(player.pitch, player.yaw);
 
+        // Get mesh renderer
+        player.EntityRenderers = player.EntityObject.GetComponentsInChildren<Renderer>();
         return true;
     }
     private bool DeletePlayerObject(Player player)
@@ -229,10 +241,12 @@ public class EntityCreator : MonoBehaviour
         if (player.EntityObject != null)
         {
             Destroy(player.EntityObject);
+            Debug.Log($"Deleted player {player.UniqueId}");
+            // Delete the player successfully
+            return true;
         }
 
-        // Delete the player successfully
-        return true;
+        return false;
     }
     private bool DeletePlayerFromDict(Player player)
     {
