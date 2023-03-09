@@ -16,11 +16,10 @@ public class Player : Entity
         UseStart,
         UseEnd
     }
-    public const int SlotNum = 36;
     public const float PlayerHurtChangeColorTime = 0.5f;
     public float Health;
     public int Experiments;
-    public Slot[] Inventory = new Slot[SlotNum];
+    public Inventory Inventory = new();
     public int MainHandSlot;
     public int Id = 0;
 

@@ -51,7 +51,7 @@ public class GetPlayerInformationPacket : Packet
                 damage = int.Parse(damageToken.ToString());
             }
 
-            this._player.Inventory[slot] = new(slot, itemId, count, damage);
+            this._player.Inventory.Slots[slot] = new(slot, itemId, count, damage);
         }
 
         // Main hand

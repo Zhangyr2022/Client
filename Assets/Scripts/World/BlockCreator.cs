@@ -15,7 +15,9 @@ public class BlockCreator : MonoBehaviour
         {"Leaves",7 },
         {"Cobblestone",8 },
         {"CoalOre",9 },
-        {"IronOre",10}
+        {"IronOre",10},
+        {"GoldenOre",11 },
+        {"DiamondOre",12 },
     };
     public GameObject[] BlockPrefabs;  // Find in the all prefabs
 

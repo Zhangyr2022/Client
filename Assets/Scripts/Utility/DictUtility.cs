@@ -38,7 +38,6 @@ public class DictUtility
                     blockArray[i] = blockArray[i][..nowPosition] + char.ToUpper(blockArray[i][nowPosition]) + blockArray[i][(nowPosition + 1)..];
                 nowPosition = blockArray[i][nowPosition..].IndexOf('_');
             }
-            Debug.Log(blockArray[i]);
         }
 
         return blockArray;

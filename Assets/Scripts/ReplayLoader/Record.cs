@@ -113,6 +113,11 @@ public class Record : MonoBehaviour
     private Light _light;
     private bool _isShadeOn;
 
+    private Button _flashlightButton;
+    private TMP_Text _flashlightButtonText;
+    private Light _flashlight;
+    private bool _isFlashlightOn;
+
     public RecordInfo RecordInformation
     {
         get
@@ -263,6 +268,28 @@ public class Record : MonoBehaviour
                 this._shadeButtonText.text = "Shade off";
             }
         });
+
+        // Flash light
+        _flashlight = GameObject.Find("Main Camera/Spot Light").GetComponent<Light>();
+        _flashlightButton = GameObject.Find("Canvas/FlashLight").GetComponent<Button>();
+        _flashlightButtonText = GameObject.Find("Canvas/FlashLight/FlashLightText").GetComponent<TMP_Text>();
+        _isFlashlightOn = true;
+        _flashlightButton.onClick.AddListener(() =>
+        {
+            this._isFlashlightOn = !this._isFlashlightOn;
+            if (this._isFlashlightOn == true)
+            {
+                this._flashlight.gameObject.SetActive(true);
+                this._flashlightButtonText.text = "Flashlight on";
+            }
+            else
+            {
+                this._flashlight.gameObject.SetActive(false);
+                this._flashlightButtonText.text = "Flashlight off";
+            }
+        });
+
+
     }
     private JArray LoadRecordData()
     {
@@ -537,7 +564,47 @@ public class Record : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="eventDataJson"></param>
+    private void AfterPlayerInventoryChange(JObject eventDataJson)
+    {
+        JArray changeList = (JArray)eventDataJson["change_list"];
+        foreach (JToken entityJson in changeList)
+        {
+            int playerUniqueId = (int)entityJson["player_unique_id"];
+            Player player = EntitySource.GetPlayer(playerUniqueId);
+            if (player == null) continue;
 
+            // Get slots change list
+            JArray slotChangeList = (JArray)entityJson["change_list"];
+            foreach (JToken slotChangeJson in slotChangeList)
+            {
+                int slot = (int)slotChangeJson["slot"];
+                int count = (int)slotChangeJson["count"];
+
+                if (slot < 0 || slot >= Inventory.SlotNum)
+                {
+                    Debug.Log("Slot index out of bounds!");
+                    continue;
+                }
+
+                // Check if the item type id exists
+                JToken itemTypeIdJson = slotChangeJson["item_type_id"];
+                if (itemTypeIdJson == null && count != 0)
+                {
+                    Debug.Log("No itemId but its count is 0");
+                    continue;
+                }
+
+                // Change slots
+                player.Inventory.Slots[slot].Count = count;
+                if (itemTypeIdJson != null)
+                    player.Inventory.Slots[slot].ItemId = (int)itemTypeIdJson;
+            }
+        }
+    }
     #endregion
 
     #region Record Update
@@ -599,6 +666,9 @@ public class Record : MonoBehaviour
                             break;
                         case "after_entity_hurt":
                             this.AfterEntityHurt(nowEventDataJson);
+                            break;
+                        case "after_player_inventory_change":
+                            this.AfterPlayerInventoryChange(nowEventDataJson);
                             break;
                         default:
                             break;
