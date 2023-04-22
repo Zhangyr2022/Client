@@ -8,7 +8,7 @@ public class MenuBackgroundMovement : MonoBehaviour
     private float _time;
     public const float Scale = 0.25f;
     private float _scaleTime;
-    public const float RandomWalkRate = 0.15f;
+    public const float RandomWalkRate = 0.1f;
     // Start is called before the first frame update
     void Start()
     {

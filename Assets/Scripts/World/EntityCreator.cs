@@ -34,9 +34,23 @@ public class EntityCreator : MonoBehaviour
         "StoneAxe",
         "Stick",
         "Coal",
-        "Iron",
-        "Golden",
-        "Diamond"
+        "RawIron",
+        "IronIngot",
+        "RawGold",
+        "GoldIngot",
+        "Diamond",
+        "IronSword",
+        "IronShovel",
+        "IronPickaxe",
+        "IronAxe",
+        "GoldenSword",
+        "GoldenShovel",
+        "GoldenPickaxe",
+        "GoldenAxe",
+        "DiamondSword",
+        "DiamondShovel",
+        "DiamondPickaxe",
+        "DiamondAxe",
     };
     public GameObject[] ItemPrefabs;
 
@@ -230,6 +244,9 @@ public class EntityCreator : MonoBehaviour
 
         // Get mesh renderer
         player.EntityRenderers = player.EntityObject.GetComponentsInChildren<Renderer>();
+
+        player.Health = Player.PlayerMaxHealth;
+        Debug.Log("Create Player!");
         return true;
     }
     private bool DeletePlayerObject(Player player)

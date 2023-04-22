@@ -5,8 +5,8 @@ using UnityEngine.UI;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using TMPro;
-using Unity.VisualScripting.Antlr3.Runtime.Collections;
 using System.Linq;
+using NovelCraft.Sdk;
 
 public class Record : MonoBehaviour
 {
@@ -118,6 +118,10 @@ public class Record : MonoBehaviour
     private Light _flashlight;
     private bool _isFlashlightOn;
 
+    /// <summary>
+    /// Main Slot bar
+    /// </summary>
+    private MainSlots _mainSlots;
     public RecordInfo RecordInformation
     {
         get
@@ -126,6 +130,7 @@ public class Record : MonoBehaviour
         }
     }
 
+    private Observe _obeserve;
     private void Start()
     {
         // Initialize the _recordInfo
@@ -138,6 +143,7 @@ public class Record : MonoBehaviour
         var fileLoaded = GameObject.Find("FileLoaded").GetComponent<FileLoaded>();
         // Check if the file is Level json
         this._recordFile = fileLoaded.File;
+        this._obeserve = GameObject.Find("Main Camera").GetComponent<Observe>();
 
         // GUI //
 
@@ -289,7 +295,8 @@ public class Record : MonoBehaviour
             }
         });
 
-
+        // MainSlots
+        this._mainSlots = GameObject.Find("ObserverCanvas/MainSlots").GetComponent<MainSlots>();
     }
     private JArray LoadRecordData()
     {
@@ -559,6 +566,12 @@ public class Record : MonoBehaviour
             {
                 int damage = (int)entityJson["damage"];
 
+                // Update health bar
+                if (entity is Player player)
+                {
+                    player.Health -= damage;
+                    _obeserve.UpdateHealthBar(player);
+                }
                 StartCoroutine(((Player)entity).PlayerHurt(this._recordInfo.RecordSpeed));
             }
         }
@@ -598,10 +611,20 @@ public class Record : MonoBehaviour
                     continue;
                 }
 
+                // Id:
+                int itemTypeId = (int)itemTypeIdJson;
+
                 // Change slots
                 player.Inventory.Slots[slot].Count = count;
                 if (itemTypeIdJson != null)
-                    player.Inventory.Slots[slot].ItemId = (int)itemTypeIdJson;
+                    player.Inventory.Slots[slot].ItemId = itemTypeId;
+
+                // ?
+                // Change main slots bar
+                if (slot < 9)
+                {
+                    this._mainSlots.ChangeSlotItem(slot, itemTypeId, count);
+                }
             }
         }
     }
@@ -692,6 +715,7 @@ public class Record : MonoBehaviour
         }
 
     }
+
     private void Update()
     {
         if ((this._recordInfo.NowPlayState == PlayState.Play && this._recordInfo.NowRecordNum < this._recordArray.Count) ||

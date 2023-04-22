@@ -7,6 +7,7 @@ using System.IO;
 using UnityEngine;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+
 public class JsonUtility
 {
     /// <summary>
@@ -16,24 +17,35 @@ public class JsonUtility
     /// <exception cref="Exception"></exception>
     public static JObject UnzipLevel(string path)
     {
-        ZipArchive mcLevelDataZipFile = ZipFile.OpenRead(path);
-        //Stream mcLevelDataEntryStream = mcLevelDataZipFile.GetEntry("level.dat.old").Open() ??
-        //    (mcLevelDataZipFile.GetEntry("level.dat").Open() ??
-        //    throw new Exception("mcLevel data not found in zip archive."));
-        Stream mcLevelDataEntryStream = (mcLevelDataZipFile.GetEntry("level.dat").Open() ??
-        throw new Exception("mcLevel data not found in zip archive."));
+        Stream levelDataStream = null;
+
+        if (Directory.Exists(path))
+        {
+            levelDataStream = ZipFile.OpenRead($"{path}/level.dat").GetEntry("level_data.json").Open() ??
+             throw new Exception("Level data not found in zip archive.");
+        }
+        else if (File.Exists(path))
+        {
+            ZipArchive mcLevelDataZipFile = ZipFile.OpenRead(path);
+            //Stream mcLevelDataEntryStream = mcLevelDataZipFile.GetEntry("level.dat.old").Open() ??
+            //    (mcLevelDataZipFile.GetEntry("level.dat").Open() ??
+            //    throw new Exception("mcLevel data not found in zip archive."));
+            Stream mcLevelDataEntryStream = (mcLevelDataZipFile.GetEntry("level.dat").Open() ??
+            throw new Exception("mcLevel data not found in zip archive."));
 
 
-        ZipArchive levelDataZipFile = new ZipArchive(mcLevelDataEntryStream);
-        Stream levelDataEntryStream = levelDataZipFile.GetEntry("level_data.json").Open() ??
-         throw new Exception("Level data not found in zip archive.");
+            ZipArchive levelDataZipFile = new ZipArchive(mcLevelDataEntryStream);
+            levelDataStream = levelDataZipFile.GetEntry("level_data.json").Open() ??
+             throw new Exception("Level data not found in zip archive.");
+        }
+
 
         // Read the level data to a JSON string.
-        StreamReader levelDataEntryStreamReader = new StreamReader(levelDataEntryStream);
+        StreamReader levelDataStreamReader = new StreamReader(levelDataStream);
 
         //Debug.Log(levelDataEntryStreamReader.ReadToEnd());
 
-        return (JObject)JToken.ReadFrom(new JsonTextReader(levelDataEntryStreamReader));
+        return (JObject)JToken.ReadFrom(new JsonTextReader(levelDataStreamReader));
     }
     /// <summary>
     /// 
@@ -43,25 +55,44 @@ public class JsonUtility
     /// <exception cref="Exception"></exception>
     public static JObject UnzipRecord(string path)
     {
-        ZipArchive mcLevelDataZipFile = ZipFile.OpenRead(path);
-
-        Debug.Log($"entry count: {mcLevelDataZipFile.Entries.Count}");
-
         // Load all the record entry
         List<JObject> allRecordJsonObject = new();
 
-        foreach (ZipArchiveEntry recordEntry in mcLevelDataZipFile.Entries)
+        if (Directory.Exists(path))
         {
-            // If the recordEntry is not folder and not level
-            if (!recordEntry.FullName.Contains("level") && !recordEntry.FullName.EndsWith("/"))
+            string[] files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+            //Loop through each file
+            foreach (string file in files)
             {
-                Stream recordEntryStream = recordEntry.Open();
-                // Unzip the record
-                ZipArchive recordZipArchive = new(recordEntryStream);
+                if (!file.Contains("level") && !file.EndsWith("/") && !file.Contains(".meta"))
+                {
+                    using (Stream stream = File.OpenRead(file))
+                    {
+                        // Unzip the record
+                        ZipArchive recordZipArchive = new(stream);
 
-                StreamReader recordStreamReader = new(recordZipArchive.Entries[0].Open());
-                allRecordJsonObject.Add((JObject)JToken.ReadFrom(new JsonTextReader(recordStreamReader)));
-                //Debug.Log(recordStreamReader.ReadToEnd().ToString());
+                        StreamReader recordStreamReader = new(recordZipArchive.Entries[0].Open());
+                        allRecordJsonObject.Add((JObject)JToken.ReadFrom(new JsonTextReader(recordStreamReader)));
+                    }
+                }
+            }
+        }
+        else if (File.Exists(path))
+        {
+            ZipArchive ncLevelDataZipFile = ZipFile.OpenRead($"{path}");
+            foreach (ZipArchiveEntry recordEntry in ncLevelDataZipFile.Entries)
+            {
+                // If the recordEntry is not folder and not level
+                if (!recordEntry.FullName.Contains("level") && !recordEntry.FullName.EndsWith("/"))
+                {
+                    Stream recordEntryStream = recordEntry.Open();
+                    // Unzip the record
+                    ZipArchive recordZipArchive = new(recordEntryStream);
+
+                    StreamReader recordStreamReader = new(recordZipArchive.Entries[0].Open());
+                    allRecordJsonObject.Add((JObject)JToken.ReadFrom(new JsonTextReader(recordStreamReader)));
+                    //Debug.Log(recordStreamReader.ReadToEnd().ToString());
+                }
             }
         }
 

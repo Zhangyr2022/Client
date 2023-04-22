@@ -19,9 +19,7 @@ public class Level : MonoBehaviour
     }
     private BlockCreator _blockCreator;
     private LevelInfo _levelInfo;
-    private Upload _upload = new() { };
     private Upload.OpenFileName _levelFile = new() { };
-
 
     /// <summary>
     /// Get the private _levelInfo

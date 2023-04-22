@@ -265,6 +265,52 @@ public class CheckVisibility
         NeighbourBlockChange(YdownBlock);
         NeighbourBlockChange(ZfrontBlock);
         NeighbourBlockChange(ZbackBlock);
+    }
 
+    public static void CheckSingleBlockVisibility(BlockCreator blockCreator, Block block)
+    {
+        void BlockChange(Block neighbourBlock)
+        {
+            if (neighbourBlock != null)
+            {
+                if (neighbourBlock.Id == 0 && block.BlockObject == null)
+                {
+                    // Air block
+                    blockCreator.CreateBlock(block);
+                }
+            }
+        };
+
+        Block XleftBlock = BlockSource.GetBlock(new Vector3Int(block.Position.x - 1, block.Position.y, block.Position.z));
+        Block XrightBlock = BlockSource.GetBlock(new Vector3Int(block.Position.x + 1, block.Position.y, block.Position.z));
+        Block YupBlock = BlockSource.GetBlock(new Vector3Int(block.Position.x, block.Position.y - 1, block.Position.z));
+        Block YdownBlock = BlockSource.GetBlock(new Vector3Int(block.Position.x, block.Position.y + 1, block.Position.z));
+        Block ZfrontBlock = BlockSource.GetBlock(new Vector3Int(block.Position.x, block.Position.y, block.Position.z - 1));
+        Block ZbackBlock = BlockSource.GetBlock(new Vector3Int(block.Position.x, block.Position.y, block.Position.z + 1));
+
+        BlockChange(XleftBlock);
+        BlockChange(XrightBlock);
+        BlockChange(YupBlock);
+        BlockChange(YdownBlock);
+        BlockChange(ZfrontBlock);
+        BlockChange(ZbackBlock);
+    }
+    public static void CheckSectionVisibility(BlockCreator blockCreator, Section section)
+    {
+        if (section is null || blockCreator is null) return;
+
+        for (int x = section.PositionIndex.x * 16 - 1; x <= (section.PositionIndex.x + 1) * 16; x++)
+        {
+            for (int y = section.PositionIndex.y * 16 - 1; y <= (section.PositionIndex.y + 1) * 16; y++)
+            {
+                for (int z = section.PositionIndex.z * 16 - 1; z <= (section.PositionIndex.z + 1) * 16; z++)
+                {
+                    Block block = BlockSource.GetBlock(new Vector3Int(x, y, z));
+
+                    if (block is not null)
+                        CheckSingleBlockVisibility(blockCreator, block);
+                }
+            }
+        }
     }
 }

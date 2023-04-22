@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
+using UnityEngine.UI;
 public class Observe : MonoBehaviour
 {
     public enum ObserveState
@@ -26,6 +26,19 @@ public class Observe : MonoBehaviour
     public const float SpectatorDistance = 5f;
     public const float FreeMaxPitch = 80;
     public int NowFollowerId;
+
+    /// <summary>
+    /// Main Slot bar
+    /// </summary>
+    private MainSlots _mainSlots;
+
+
+    private GameObject _healthBar;
+    private int _showHealth;
+    private List<Image> _healthImageList = new();
+    private Sprite _fullHealthImage;
+    private Sprite _halfHealthImage;
+
     // Start is called before the first frame update
     private void Start()
     {
@@ -38,26 +51,45 @@ public class Observe : MonoBehaviour
         Canvas = GameObject.Find("Canvas").GetComponent<Canvas>();
         Canvas.enabled = (false);
         NowObserveState = ObserveState.Free;
+
+        this._mainSlots = GameObject.Find("ObserverCanvas/MainSlots").GetComponent<MainSlots>();
+
+        this._healthBar = GameObject.Find("ObserverCanvas/Health");
+        this._halfHealthImage = Resources.Load<Sprite>("GUI/Slot/HalfHealth");
+        this._fullHealthImage = Resources.Load<Sprite>("GUI/Slot/FullHealth");
+        // Create max health 
+        for (int i = 0; i < 10; i++)
+        {
+            GameObject healthObject = new();
+            Image healthImage = healthObject.AddComponent<Image>();
+            healthImage.sprite = this._fullHealthImage;
+            // Set father
+            healthObject.transform.SetParent(this._healthBar.transform);
+            healthObject.transform.localScale = Vector3.one;
+            // Add list
+            this._healthImageList.Add(healthImage);
+        }
+        _showHealth = 20;
     }
     private void Move()
     {
-        float Horizontal = Input.GetAxis("Horizontal");
-        float Vertical = Input.GetAxis("Vertical");
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
 
         // Move when "w a s d" is pressed
-        if (Mathf.Abs(Vertical) > 0.01)
+        if (Mathf.Abs(vertical) > 0.01)
         {
             Vector3 fowardVector = transform.forward;
             fowardVector = new Vector3(fowardVector.x, 0, fowardVector.z).normalized;
             // move forward
-            transform.Translate(MoveSpeed * Time.deltaTime * Vertical * fowardVector, Space.World);
+            transform.Translate(MoveSpeed * Time.deltaTime * vertical * fowardVector, Space.World);
         }
-        if (Mathf.Abs(Horizontal) > 0.01)
+        if (Mathf.Abs(horizontal) > 0.01)
         {
             Vector3 rightVector = transform.right;
             rightVector = new Vector3(rightVector.x, 0, rightVector.z).normalized;
             // move aside 
-            transform.Translate(MoveSpeed * Time.deltaTime * Horizontal * rightVector, Space.World);
+            transform.Translate(MoveSpeed * Time.deltaTime * horizontal * rightVector, Space.World);
         }
 
         // Fly up if space is clicked
@@ -73,7 +105,7 @@ public class Observe : MonoBehaviour
     }
     private void SpectatorFollow()
     {
-        if (FollowingEntity != null)
+        if (FollowingEntity != null && FollowingEntity.EntityObject != null)
         {
             Vector3 followingEntityCentralPosition = new Vector3(
                 FollowingEntity.EntityObject.transform.position.x,
@@ -81,7 +113,7 @@ public class Observe : MonoBehaviour
                 FollowingEntity.EntityObject.transform.position.z)
                 - SpectatorDistance * this.transform.forward;
 
-            this.transform.position = Vector3.Lerp(this.transform.position, followingEntityCentralPosition, 0.5f);
+            this.transform.position = Vector3.Lerp(this.transform.position, followingEntityCentralPosition, 0.4f);
         }
     }
     private void FirstPersonFollow()
@@ -97,7 +129,7 @@ public class Observe : MonoBehaviour
                 Mathf.Cos(FollowingEntity.yaw),
                 Mathf.Cos(FollowingEntity.pitch) * Mathf.Sin(FollowingEntity.yaw)
             );
-            this.transform.position = Vector3.Lerp(this.transform.position, followingEntityHeadPosition + headPosition, 0.5f);
+            this.transform.position = Vector3.Lerp(this.transform.position, followingEntityHeadPosition + headPosition, 0.4f);
         }
     }
     private void Rotate()
@@ -128,13 +160,16 @@ public class Observe : MonoBehaviour
                 }
                 else if (NowObserveState == ObserveState.Spectator)
                 {
-                    transform.Rotate(new Vector3(0, MouseX * RotateSpeed * Time.deltaTime, 0), Space.World);
-                    transform.Rotate(new Vector3(-MouseY * RotateSpeed * Time.deltaTime * 1f, 0, 0));
-                    transform.position = new Vector3(
-                        FollowingEntity.EntityObject.transform.position.x,
-                        FollowingEntity.EntityObject.transform.position.y + 1,
-                        FollowingEntity.EntityObject.transform.position.z)
-                        - SpectatorDistance * this.transform.forward;
+                    if (this.FollowingEntity != null && FollowingEntity.EntityObject != null)
+                    {
+                        transform.Rotate(new Vector3(0, MouseX * RotateSpeed * Time.deltaTime, 0), Space.World);
+                        transform.Rotate(new Vector3(-MouseY * RotateSpeed * Time.deltaTime * 1f, 0, 0));
+                        transform.position = new Vector3(
+                            FollowingEntity.EntityObject.transform.position.x,
+                            FollowingEntity.EntityObject.transform.position.y + 1,
+                            FollowingEntity.EntityObject.transform.position.z)
+                            - SpectatorDistance * this.transform.forward;
+                    }
                 }
             }
             if (NowObserveState == ObserveState.FirstPerson)
@@ -196,24 +231,63 @@ public class Observe : MonoBehaviour
             else if (this.NowObserveState == ObserveState.FirstPerson)
             {
                 this.NowObserveState = ObserveState.Free;
+                // Clear main slots
+                this._mainSlots.ClearAllSlots();
             }
         }
     }
     private void JumpToAnotherPlayer()
     {
         float mouseScrollWheel = Input.GetAxis("Mouse ScrollWheel");
-        if (!IsSettingGUI && (mouseScrollWheel) > 0.01f)
+        if ((mouseScrollWheel) > 0.01f)
         {
             //System.Random rand = new System.Random();
             this.FollowingEntity = EntitySource.PlayerDict.Values.ToList()[NowFollowerId];
             NowFollowerId++;
             if (NowFollowerId >= EntitySource.PlayerDict.Values.Count) NowFollowerId -= EntitySource.PlayerDict.Values.Count;
+
+            // Update main slots
+            _mainSlots.UpdateMainSlots(((Player)this.FollowingEntity).Inventory);
+            // Update health
+            UpdateHealthBar((Player)this.FollowingEntity);
         }
-        else if (!IsSettingGUI && (mouseScrollWheel) < -0.01f)
+        else if ((mouseScrollWheel) < -0.01f)
         {
             this.FollowingEntity = EntitySource.PlayerDict.Values.ToList()[NowFollowerId];
             NowFollowerId--;
             if (NowFollowerId < 0) NowFollowerId += EntitySource.PlayerDict.Values.Count;
+
+            // Update main slots
+            _mainSlots.UpdateMainSlots(((Player)this.FollowingEntity).Inventory);
+            // Update health
+            UpdateHealthBar((Player)this.FollowingEntity);
+        }
+    }
+    public void UpdateHealthBar(Player player)
+    {
+        if ((Player)this.FollowingEntity != player || this.NowObserveState == ObserveState.Free) return;
+
+        // Update health bar
+        this._showHealth = (int)player.Health;
+        Debug.Log(this._showHealth);
+        for (int i = 0; i < this._healthImageList.Count; i++)
+        {
+            if (this._showHealth >= 2 * (i + 1))
+            {
+                _healthImageList[i].sprite = this._fullHealthImage;
+                _healthImageList[i].color = new Color(1, 1, 1, 1);
+            }
+            else if (this._showHealth == 2 * i + 1)
+            {
+                _healthImageList[i].sprite = this._halfHealthImage;
+                _healthImageList[i].color = new Color(1, 1, 1, 1);
+            }
+            else
+            {
+                _healthImageList[i].sprite = null;
+                // Transparent
+                _healthImageList[i].color = new Color(1, 1, 1, 0);
+            }
         }
 
     }

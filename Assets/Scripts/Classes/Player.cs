@@ -17,6 +17,7 @@ public class Player : Entity
         UseEnd
     }
     public const float PlayerHurtChangeColorTime = 0.5f;
+    public const int PlayerMaxHealth = 20;
     public float Health;
     public int Experiments;
     public Inventory Inventory = new();
