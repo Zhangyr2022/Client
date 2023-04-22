@@ -49,6 +49,11 @@ public class BlockSource
         }
     }
 
+    /// <summary>
+    /// Get index of the section
+    /// </summary>
+    /// <param name="blockPosition"></param>
+    /// <returns></returns>
     private static Vector3Int GetSectionPositionIndex(Vector3 blockPosition)
     {
         return Vector3Int.FloorToInt(new Vector3(blockPosition.x, blockPosition.y, blockPosition.z) / 16.0f);

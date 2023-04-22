@@ -13,21 +13,25 @@ public class InterpolateMovement : MonoBehaviour
     /// </summary>
     private Vector3? _targetVelocity;
 
-    private float _lastSetPositionTime;
+    private float _recordSpeed;
+
     public const float DisplacementRate = 0.05f;
+
+    float lastTime;
     /// <summary>
     /// If the distance between now position and target position is smaller than LerpMinDistance, stop lerping.
     /// </summary>
     //public const float LerpMinDistance = 0.1f;
-    public const float InterpolationMinVelocity = 0.02f;
-    public void SetTargetPosition(Vector3 targetPosition)
+    public const float InterpolationMinDotProduct = 0f;
+    public void SetTargetPosition(Vector3 targetPosition, float recordSpeed)
     {
+        this._recordSpeed = recordSpeed;
         if (this._targetPosition != null)
         {
-            this._targetVelocity = (targetPosition - this._targetPosition) / (Time.time - _lastSetPositionTime);
+            this.transform.position = this._targetPosition.Value;
+            this._targetVelocity = (targetPosition - this._targetPosition) / Record.RecordInfo.FrameTime;
         }
         this._targetPosition = targetPosition;
-        _lastSetPositionTime = Time.time;
     }
     private void Interpolation()
     {
@@ -36,18 +40,27 @@ public class InterpolateMovement : MonoBehaviour
             return;
         }
 
-        if (((Vector3)this._targetVelocity).magnitude > InterpolationMinVelocity)
+        this.transform.position += this._targetVelocity.Value * this._recordSpeed * Time.deltaTime;
+
+        if (Vector3.Dot(this._targetPosition.Value - this.transform.position, this._targetVelocity.Value) /
+            (this._targetVelocity.Value.magnitude * (this.transform.position - this._targetPosition.Value).magnitude) < InterpolationMinDotProduct)
         {
-            Vector3 velocity = (Vector3)this._targetVelocity + ((Vector3)this._targetPosition - this.transform.position) * DisplacementRate;
-            this.transform.Translate(velocity * Time.deltaTime);
-        }
-        else
-        {
-            this.transform.position = (Vector3)this._targetPosition;
+            this._targetVelocity = new Vector3();
         }
 
+        //if (((Vector3)this._targetVelocity).magnitude > InterpolationMinVelocity)
+        //{
+        //    Vector3 velocity = (Vector3)this._targetVelocity + ((Vector3)this._targetPosition - this.transform.position) * DisplacementRate;
+        //    this.transform.Translate(velocity * Time.deltaTime);
+        //}
+        //else
+        //{
+        // this.transform.position = (Vector3)this._targetPosition;
+        //}
+
+        // Close The Interpolation Temporarily
     }
-    private void Update()
+    void Update()
     {
         //if (Vector3.Distance(this.transform.position, this._targetPosition) > LerpMinDistance)
         Interpolation();

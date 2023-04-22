@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class DictUtility
@@ -24,11 +25,21 @@ public class DictUtility
 
             if (prefixIndex != -1)
             {
-                blockArray[i] = blockArray[i].Substring(prefixIndex + prefix.Length);
+                blockArray[i] = blockArray[i][(prefixIndex + prefix.Length)..];
             }
             // Capitalize the name 
             blockArray[i] = blockArray[i][..1].ToUpper() + blockArray[i][1..];
+
+            int nowPosition = blockArray[i].IndexOf('_');
+            while (nowPosition != -1)
+            {
+                blockArray[i] = blockArray[i].Remove(nowPosition, 1);
+                if (nowPosition < blockArray[i].Length)
+                    blockArray[i] = blockArray[i][..nowPosition] + char.ToUpper(blockArray[i][nowPosition]) + blockArray[i][(nowPosition + 1)..];
+                nowPosition = blockArray[i][nowPosition..].IndexOf('_');
+            }
         }
+
         return blockArray;
     }
 }

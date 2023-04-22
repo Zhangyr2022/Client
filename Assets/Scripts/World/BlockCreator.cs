@@ -13,7 +13,11 @@ public class BlockCreator : MonoBehaviour
         {"Bedrock",5 },
         {"Log",6 },
         {"Leaves",7 },
-        {"Cobblestone",8 }
+        {"Cobblestone",8 },
+        {"CoalOre",9 },
+        {"IronOre",10},
+        {"GoldenOre",11 },
+        {"DiamondOre",12 },
     };
     public GameObject[] BlockPrefabs;  // Find in the all prefabs
 
@@ -75,28 +79,47 @@ public class BlockCreator : MonoBehaviour
         return true;
     }
     /// <summary>
+    /// Destroy block object if it's not null
+    /// </summary>
+    /// <param name="block"></param>
+    /// <returns>True if the object is deleted successfully</returns>
+    public bool DestroyBlock(Block block)
+    {
+        if (block.BlockObject == null)
+            return false;
+
+        Destroy(block.BlockObject);
+        return true;
+    }
+    /// <summary>
     /// Update the block according to the position
     /// </summary>
     /// <param name="position">The absolute position of the block to be updated</param>
     /// <param name="blockId">New block id</param>
     /// <param name="blockName">New block name</param>
-    /// <returns>False if the block cannot be updated</returns>
-    public bool UpdateBlock(Vector3Int position, short blockId, string blockName)
+    /// <returns>null if the block cannot be updated</returns>
+    public Block UpdateBlock(Vector3Int position, short blockId, string blockName, out short? originalBlockId)
     {
         Block block = BlockSource.GetBlock(position);
         // False if the block cannot be found or its gameobject hasn't already created
-        if (block == null || block.BlockObject == null)
+        if (block == null)
         {
-            return false;
+            originalBlockId = null;
+            return null;
         }
+        originalBlockId = block.Id;
 
-        // Update info
-        Destroy(block.BlockObject);
-        block.Id = blockId;
-        block.Name = blockName;
+        // Reconstruct the block
+        if (blockId != originalBlockId)
+        {
+            DestroyBlock(block);
 
-        CreateBlock(block);
+            // Update info
+            block.Id = blockId;
+            block.Name = blockName;
 
-        return true;
+            CreateBlock(block);
+        }
+        return block;
     }
 }

@@ -13,19 +13,21 @@ public class Item : Entity
     /// This position represant real position of the gameobject
     /// </summary>
     //private Vector3 _nowPosition;
-    public Item(int uniqueId, Vector3 position, int id)
+    public Item(int uniqueId, Vector3 position, int id, float yaw = 0, float pitch = 0)
     {
         this.UniqueId = uniqueId;
         this.Position = position;
         this.Id = id;
         this.EntityObject = null;
-        this.yaw = this.pitch = 0;
+        this.yaw = yaw;
+        this.pitch = pitch;
     }
+
     /// <summary>
     /// Change the position of this item
     /// </summary>
     /// <param name="newPosition"></param>
-    public void UpdatePosition(Vector3 newPosition)
+    public void UpdatePosition(Vector3 newPosition, float recordSpeed)
     {
         this.Position = newPosition;
         if (this.EntityObject != null)
@@ -33,7 +35,7 @@ public class Item : Entity
             if (this.InterpolateMove != null)
             {
                 // Interpolation movement
-                this.InterpolateMove.SetTargetPosition(newPosition);
+                this.InterpolateMove.SetTargetPosition(newPosition, recordSpeed);
             }
             else
             {
@@ -43,8 +45,10 @@ public class Item : Entity
             }
         }
     }
-    public void UpdateOrientation(int pitch, int yaw)
+    public void UpdateOrientation(float pitch, float yaw)
     {
+        this.pitch = pitch;
+        this.yaw = yaw;
         if (this.EntityObject != null)
         {
             this.EntityObject.transform.rotation = Quaternion.Euler(pitch, yaw, 0);

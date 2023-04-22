@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class UpdateEntities : Packet
 {
-    private List<Entity> _entities;
+    private List<Entity> _entities = new();
     public List<Entity> Entities
     {
         get { return _entities; }

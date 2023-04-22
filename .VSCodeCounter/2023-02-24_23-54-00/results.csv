@@ -1,0 +1,32 @@
+"filename", "language", "C#", "comment", "blank", "total"
+"e:\Github desktop storage\Client\Assets\Scripts\Classes\Block.cs", "C#", 24, 0, 2, 26
+"e:\Github desktop storage\Client\Assets\Scripts\Classes\BlockDicts.cs", "C#", 8, 6, 3, 17
+"e:\Github desktop storage\Client\Assets\Scripts\Classes\Entity.cs", "C#", 20, 0, 2, 22
+"e:\Github desktop storage\Client\Assets\Scripts\Classes\Item.cs", "C#", 38, 14, 2, 54
+"e:\Github desktop storage\Client\Assets\Scripts\Classes\Player.cs", "C#", 22, 0, 2, 24
+"e:\Github desktop storage\Client\Assets\Scripts\Classes\Section.cs", "C#", 15, 6, 2, 23
+"e:\Github desktop storage\Client\Assets\Scripts\Classes\Slot.cs", "C#", 18, 0, 4, 22
+"e:\Github desktop storage\Client\Assets\Scripts\DataTransfer\FileLoaded.cs", "C#", 18, 6, 2, 26
+"e:\Github desktop storage\Client\Assets\Scripts\Observer\Observe.cs", "C#", 52, 9, 5, 66
+"e:\Github desktop storage\Client\Assets\Scripts\Packet\Client.cs", "C#", 12, 2, 5, 19
+"e:\Github desktop storage\Client\Assets\Scripts\Packet\GetBlockEntityPacket.cs", "C#", 81, 4, 15, 100
+"e:\Github desktop storage\Client\Assets\Scripts\Packet\GetPlayerInformationPacket.cs", "C#", 45, 5, 13, 63
+"e:\Github desktop storage\Client\Assets\Scripts\Packet\GetStatePacket.cs", "C#", 46, 1, 6, 53
+"e:\Github desktop storage\Client\Assets\Scripts\Packet\HandshakePacket.cs", "C#", 52, 1, 8, 61
+"e:\Github desktop storage\Client\Assets\Scripts\Packet\Packet.cs", "C#", 14, 8, 1, 23
+"e:\Github desktop storage\Client\Assets\Scripts\Packet\UpdateBlocksPacket.cs", "C#", 37, 3, 7, 47
+"e:\Github desktop storage\Client\Assets\Scripts\Packet\UpdateEntities.cs", "C#", 44, 3, 8, 55
+"e:\Github desktop storage\Client\Assets\Scripts\ReplayLoader\Level.cs", "C#", 250, 58, 39, 347
+"e:\Github desktop storage\Client\Assets\Scripts\ReplayLoader\LevelLegacy.cs", "C#", 261, 79, 26, 366
+"e:\Github desktop storage\Client\Assets\Scripts\ReplayLoader\Record.cs", "C#", 246, 68, 25, 339
+"e:\Github desktop storage\Client\Assets\Scripts\ReplayLoader\RecordLegacy.cs", "C#", 246, 68, 25, 339
+"e:\Github desktop storage\Client\Assets\Scripts\ReplayLoader\Upload.cs", "C#", 73, 11, 7, 91
+"e:\Github desktop storage\Client\Assets\Scripts\ReplayLoader\UploadLevelButton.cs", "C#", 28, 29, 7, 64
+"e:\Github desktop storage\Client\Assets\Scripts\Utility\DictUtility.cs", "C#", 25, 7, 3, 35
+"e:\Github desktop storage\Client\Assets\Scripts\Utility\JsonUtility.cs", "C#", 104, 40, 19, 163
+"e:\Github desktop storage\Client\Assets\Scripts\World\BlockCreator.cs", "C#", 65, 26, 12, 103
+"e:\Github desktop storage\Client\Assets\Scripts\World\BlockSource.cs", "C#", 38, 15, 4, 57
+"e:\Github desktop storage\Client\Assets\Scripts\World\EntityCreator.cs", "C#", 90, 38, 12, 140
+"e:\Github desktop storage\Client\Assets\Scripts\World\EntitySource.cs", "C#", 28, 3, 4, 35
+"e:\Github desktop storage\Client\Assets\Scripts\World\InterpolateMovement.cs", "C#", 30, 25, 4, 59
+"Total", "-", 2030, 535, 274, 2839

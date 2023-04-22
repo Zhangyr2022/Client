@@ -1,0 +1,3 @@
+[submodule "Submodules/SDK-DotNet"]
+	path = Submodules/SDK-DotNet
+	url = https://github.com/NovelCraft/SDK-DotNet.git

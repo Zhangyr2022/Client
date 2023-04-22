@@ -15,7 +15,8 @@ public class Entity
     public int DataValue;
     public Vector3 Position;
     public GameObject EntityObject;
-    public int yaw;
-    public int pitch;
+    public float yaw;
+    public float pitch;
     public InterpolateMovement InterpolateMove;
+    public Renderer[] EntityRenderers;
 }
