@@ -16,6 +16,12 @@ jobs:
           - targetPlatform: StandaloneWindows64
             customImage: unityci/editor:2021.3.4f1-windows-mono-1
 
+          - targetPlatform: WebGL
+            customImage: unityci/editor:2021.3.4f1-webgl-1
+
+          - targetPlatform: StandaloneLinux64
+            customImage: unityci/editor:2021.3.4f1-linux-il2cpp-1
+
     steps:
       - uses: actions/checkout@v2
         with:
